@@ -1,146 +1,145 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Container,
-  Typography,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-} from '@mui/material';
-import { tenderAPI, bidAPI } from '../services/api';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, styled } from '@mui/material';
 
-interface Tender {
-  id: number;
-  title: string;
-  description: string;
-  budget: number;
-  submission_deadline: string;
-  status: string;
-}
+const PageContainer = styled('div')({
+  width: '100%',
+  height: '100vh',
+  overflow: 'hidden',
+  display: 'flex',
+  justifyContent: 'center',
+});
+
+const MainContent = styled('div')({
+  width: '100%',
+  height: '100%',
+  background: 'linear-gradient(180deg, rgb(55.89, 202.64, 251.55) 0%, rgb(33.22, 120.47, 149.55) 100%)',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: '2vh 2vw',
+});
+
+const ContentWrapper = styled('div')({
+  width: '90%',
+  height: '90%',
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '2vw',
+  '@media (max-width: 1200px)': {
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+});
+
+const LeftSection = styled('div')({
+  flex: '0 0 40%',
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'center',
+  '@media (max-width: 1200px)': {
+    flex: '0 0 30%',
+  },
+});
+
+const RightSection = styled('div')({
+  flex: '0 0 50%',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '2vh',
+  '@media (max-width: 1200px)': {
+    flex: '0 0 60%',
+    width: '100%',
+  },
+});
+
+const ButtonBase = styled('div')({
+  backgroundColor: 'rgba(217, 217, 217, 0.9)',
+  borderRadius: '1.5vw',
+  width: '100%',
+  height: 'clamp(50px, 8vh, 80px)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    backgroundColor: 'rgba(217, 217, 217, 1)',
+    transform: 'scale(1.02)',
+  },
+});
+
+const ButtonText = styled('div')({
+  color: '#000000',
+  fontFamily: 'Outfit, sans-serif',
+  fontSize: 'clamp(16px, 2.5vw, 38px)',
+  fontWeight: 300,
+  whiteSpace: 'nowrap',
+});
+
+const TitleText = styled('div')({
+  color: '#fbfbff',
+  fontFamily: 'Outfit, sans-serif',
+  fontSize: 'clamp(40px, 6vw, 130px)',
+  fontWeight: 900,
+  marginTop: '2vh',
+  textAlign: 'center',
+});
 
 const CompanyDashboard = () => {
-  const [tenders, setTenders] = useState<Tender[]>([]);
-  const [selectedTender, setSelectedTender] = useState<Tender | null>(null);
-  const [open, setOpen] = useState(false);
-  const [bidData, setBidData] = useState({
-    bid_amount: '',
-    documents: null as File | null,
-  });
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchTenders();
-  }, []);
-
-  const fetchTenders = async () => {
-    try {
-      const response = await tenderAPI.getAllTenders();
-      setTenders(response.data);
-    } catch (error) {
-      console.error('Error fetching tenders:', error);
-    }
-  };
-
-  const handleSubmitBid = async () => {
-    if (!selectedTender) return;
-
-    const formData = new FormData();
-    formData.append('tender', selectedTender.id.toString());
-    formData.append('bid_amount', bidData.bid_amount);
-    if (bidData.documents) {
-      formData.append('documents', bidData.documents);
-    }
-
-    try {
-      await bidAPI.submitBid(formData);
-      setOpen(false);
-      setBidData({ bid_amount: '', documents: null });
-      alert('Bid submitted successfully!');
-    } catch (error) {
-      console.error('Error submitting bid:', error);
-      alert('Error submitting bid');
-    }
-  };
+  const buttons = [
+    { text: 'BID TENDER', path: '/company/browse-tenders' },
+    { text: 'MY BIDS', path: '/company/my-bids' },
+  ];
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Company Dashboard
-      </Typography>
+    <PageContainer>
+      <MainContent>
+        <ContentWrapper>
+          <LeftSection>
+            <Box
+              sx={{
+                width: '100%',
+                maxWidth: '500px',
+                aspectRatio: '1',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+              }}
+            >
+              <img
+                src="/icon1.png"
+                alt="Company Logo"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
+              />
+            </Box>
+            <TitleText>COMPANY</TitleText>
+          </LeftSection>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Title</TableCell>
-              <TableCell>Description</TableCell>
-              <TableCell>Budget</TableCell>
-              <TableCell>Deadline</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tenders.map((tender) => (
-              <TableRow key={tender.id}>
-                <TableCell>{tender.title}</TableCell>
-                <TableCell>{tender.description}</TableCell>
-                <TableCell>${tender.budget}</TableCell>
-                <TableCell>{new Date(tender.submission_deadline).toLocaleDateString()}</TableCell>
-                <TableCell>{tender.status}</TableCell>
-                <TableCell>
-                  {tender.status === 'OPEN' && (
-                    <Button
-                      color="primary"
-                      size="small"
-                      onClick={() => {
-                        setSelectedTender(tender);
-                        setOpen(true);
-                      }}
-                    >
-                      Submit Bid
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
+          <RightSection>
+            {buttons.map((button, index) => (
+              <ButtonBase
+                key={index}
+                onClick={() => navigate(button.path)}
+              >
+                <ButtonText>{button.text}</ButtonText>
+              </ButtonBase>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <DialogTitle>Submit Bid</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Bid Amount"
-            margin="normal"
-            type="number"
-            value={bidData.bid_amount}
-            onChange={(e) => setBidData({ ...bidData, bid_amount: e.target.value })}
-          />
-          <input
-            type="file"
-            onChange={(e) => setBidData({ ...bidData, documents: e.target.files?.[0] || null })}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={handleSubmitBid} color="primary">
-            Submit
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+          </RightSection>
+        </ContentWrapper>
+      </MainContent>
+    </PageContainer>
   );
 };
 
-export default CompanyDashboard; 
+export default CompanyDashboard;

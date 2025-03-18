@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Box, styled, TextField, Typography } from '@mui/material';
+import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
+import { Box, styled, TextField, Typography, Link } from '@mui/material';
 
 // create a custom button container
 const StyledButtonContainer = styled(Box)(({ theme }) => ({
@@ -63,7 +63,6 @@ const ErrorText = styled(Typography)({
 const LoginForm = () => {
   const navigate = useNavigate();
   const { userType } = useParams();
-  const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -80,8 +79,7 @@ const LoginForm = () => {
     }
 
     try {
-      const endpoint = isLogin ? 'login' : 'register';
-      const response = await fetch(`http://localhost:8000/api/auth/${endpoint}/`, {
+      const response = await fetch(`http://localhost:8000/api/auth/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +102,7 @@ const LoginForm = () => {
           navigate('/company');
         }
       } else {
-        setError(data.message || 'Operation failed. Please try again.');
+        setError(data.message || 'Login failed. Please try again.');
       }
     } catch (error) {
       console.error('Error:', error);
@@ -192,36 +190,44 @@ const LoginForm = () => {
           />
 
           {error && <ErrorText>{error}</ErrorText>}
-
-          <Box
+          
+          {/* Login button - full width for both city and company */}
+          <StyledButtonContainer
+            onClick={handleSubmit}
             sx={{
-              display: 'flex',
-              gap: '2vw',
-              justifyContent: 'space-between',
+              width: '100%',
+              height: '5vh',
+              minHeight: '40px',
             }}
           >
-            <StyledButtonContainer
-              onClick={handleSubmit}
-              sx={{
-                width: '48%',
-                height: '5vh',
-                minHeight: '40px',
-              }}
-            >
-              <ButtonText>{isLogin ? 'LOGIN' : 'REGISTER'}</ButtonText>
-            </StyledButtonContainer>
-
-            <StyledButtonContainer
-              onClick={() => setIsLogin(!isLogin)}
-              sx={{
-                width: '48%',
-                height: '5vh',
-                minHeight: '40px',
-              }}
-            >
-              <ButtonText>{isLogin ? 'SIGN UP' : 'BACK TO LOGIN'}</ButtonText>
-            </StyledButtonContainer>
-          </Box>
+            <ButtonText>LOGIN</ButtonText>
+          </StyledButtonContainer>
+          
+          {/* Only show registration link for company users */}
+          {userType === 'company' && (
+            <Box sx={{ 
+              mt: 2, 
+              width: '100%',
+              textAlign: 'center',
+              backgroundColor: 'rgba(217, 217, 217, 0.4)',
+              borderRadius: '1.5vw',
+              padding: '10px',
+            }}>
+              <ButtonText sx={{ fontSize: 'clamp(14px, 1.5vw, 20px)' }}>
+                Don't have an account?{' '}
+                <RouterLink 
+                  to="/register/company" 
+                  style={{ 
+                    color: '#000000',
+                    textDecoration: 'underline',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  Register as Company
+                </RouterLink>
+              </ButtonText>
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

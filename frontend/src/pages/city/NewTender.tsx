@@ -102,15 +102,27 @@ const debugLog = (message: string, data?: any) => {
 };
 
 const TENDER_CATEGORIES = [
-  'Construction',
-  'Infrastructure',
-  'Services',
-  'Technology',
-  'Healthcare',
-  'Education',
-  'Transportation',
-  'Environment'
+  'CONSTRUCTION',
+  'INFRASTRUCTURE',
+  'SERVICES',
+  'TECHNOLOGY',
+  'HEALTHCARE',
+  'EDUCATION',
+  'TRANSPORTATION',
+  'ENVIRONMENT'
 ];
+
+// Add display names for categories
+const CATEGORY_DISPLAY_NAMES: { [key: string]: string } = {
+  'CONSTRUCTION': 'Construction',
+  'INFRASTRUCTURE': 'Infrastructure',
+  'SERVICES': 'Services',
+  'TECHNOLOGY': 'Technology',
+  'HEALTHCARE': 'Healthcare',
+  'EDUCATION': 'Education',
+  'TRANSPORTATION': 'Transportation',
+  'ENVIRONMENT': 'Environment'
+};
 
 /**
  * NewTender Component Implementation
@@ -188,7 +200,6 @@ const NewTender = () => {
       }
 
       const requestData = {
-        tender_id: Math.floor(Math.random() * 1000000).toString(),
         title: formData.title,
         description: formData.description,
         budget: parseFloat(formData.budget),
@@ -196,34 +207,53 @@ const NewTender = () => {
         requirements: formData.requirements,
         status: 'OPEN',
         notice_date: formData.notice_date ? new Date(formData.notice_date).toISOString() : null,
-        close_date: formData.close_date ? new Date(formData.close_date).toISOString() : null,
-        winner_date: formData.winner_date ? new Date(formData.winner_date).toISOString() : null,
-        construction_start: formData.construction_start ? new Date(formData.construction_start).toISOString() : null,
-        construction_end: formData.construction_end ? new Date(formData.construction_end).toISOString() : null,
         submission_deadline: formData.close_date ? new Date(formData.close_date).toISOString() : null,
+        winner_date: formData.winner_date ? new Date(formData.winner_date).toISOString() : null,
+        construction_start: formData.construction_start || null,
+        construction_end: formData.construction_end || null,
         created_by: userId
       };
 
       debugLog('Request data:', requestData);
-
-      // Log the full request details
       debugLog('Making request to:', 'http://localhost:8000/api/tenders/');
-      debugLog('Request headers:', {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token.substring(0, 10)}...`, // Only log part of the token for security
-      });
+
+      // First check if the server is responding
+      try {
+        const checkResponse = await fetch('http://localhost:8000/api/tenders/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (!checkResponse.ok && checkResponse.status !== 401) {  // Allow 401 as we'll handle auth in main request
+          throw new Error(`Server check failed: ${checkResponse.status}`);
+        }
+      } catch (error) {
+        setError('Cannot connect to server. Please ensure the backend server is running.');
+        return;
+      }
 
       const response = await fetch('http://localhost:8000/api/tenders/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,  // Add token here
         },
         body: JSON.stringify(requestData),
       });
 
       debugLog('Response status:', response.status);
-      debugLog('Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        if (response.status === 401) {
+          setError('Authentication failed. Please login again.');
+          // Optionally redirect to login page
+          navigate('/login');
+          return;
+        }
+        throw new Error(`Expected JSON response but got ${contentType}`);
+      }
 
       const responseData = await response.json();
       debugLog('Response data:', responseData);
@@ -249,7 +279,11 @@ const NewTender = () => {
     } catch (err) {
       debugLog('Error in handleSubmit:', err);
       if (err instanceof Error) {
-        setError(`Network error: ${err.message}`);
+        if (err.message.includes('Expected JSON response')) {
+          setError('Server error: Backend may not be running or token may have expired. Please try logging in again.');
+        } else {
+          setError(`Network error: ${err.message}`);
+        }
       } else {
         setError('An unexpected error occurred');
       }
@@ -352,7 +386,7 @@ const NewTender = () => {
           >
             {TENDER_CATEGORIES.map((category) => (
               <MenuItem key={category} value={category}>
-                {category}
+                {CATEGORY_DISPLAY_NAMES[category]}
               </MenuItem>
             ))}
           </StyledTextField>
@@ -420,10 +454,16 @@ const NewTender = () => {
               type="date"
               fullWidth
               value={formData.construction_start}
-              onChange={(e) => setFormData({ ...formData, construction_start: e.target.value })}
+              onChange={(e) => {
+                const date = e.target.value;
+                debugLog('Construction start date:', date);
+                setFormData({ ...formData, construction_start: date });
+              }}
               InputLabelProps={{
                 shrink: true,
               }}
+              // Add placeholder to show expected format
+              placeholder="YYYY-MM-DD"
               required
             />
             
@@ -432,10 +472,16 @@ const NewTender = () => {
               type="date"
               fullWidth
               value={formData.construction_end}
-              onChange={(e) => setFormData({ ...formData, construction_end: e.target.value })}
+              onChange={(e) => {
+                const date = e.target.value;
+                debugLog('Construction end date:', date);
+                setFormData({ ...formData, construction_end: date });
+              }}
               InputLabelProps={{
                 shrink: true,
               }}
+              // Add placeholder to show expected format
+              placeholder="YYYY-MM-DD"
               required
             />
           </Box>

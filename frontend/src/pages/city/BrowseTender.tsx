@@ -16,19 +16,18 @@ import {
   Select,
   FormControl,
   InputLabel,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Alert,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-
-/**
- * BrowseTender Component
- * 
- * Displays a list of tenders with filtering and search capabilities
- * Features:
- * - Table view of all tenders
- * - Category-based filtering
- * - Search functionality
- * - Responsive design
- */
+import DeleteIcon from '@mui/icons-material/Delete';
+import { formatDate } from '../../utils/dateUtils';
+import { deleteTender } from '../../utils/api';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -60,51 +59,83 @@ interface Tender {
   title: string;
   description: string;
   budget: string;
-  notice_date: string;    // created_at from backend
-  close_date: string;     // submission_deadline from backend
-  winner_date: string;    // will be added later
+  notice_date: string;
+  close_date: string;
+  winner_date: string;
   status: string;
-  category: string;       // will be added later
+  category: string;
   created_by: number;
 }
+
+const CATEGORY_DISPLAY_NAMES: { [key: string]: string } = {
+  'CONSTRUCTION': 'Construction',
+  'INFRASTRUCTURE': 'Infrastructure',
+  'SERVICES': 'Services',
+  'TECHNOLOGY': 'Technology',
+  'HEALTHCARE': 'Healthcare',
+  'EDUCATION': 'Education',
+  'TRANSPORTATION': 'Transportation',
+  'ENVIRONMENT': 'Environment'
+};
 
 const BrowseTender = () => {
   const [tenders, setTenders] = useState<Tender[]>([]);
   const [filteredTenders, setFilteredTenders] = useState<Tender[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [categories, setCategories] = useState<string[]>([]);
+  const [userRole, setUserRole] = useState<string>('CITY'); // Default to CITY to enable delete
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [selectedTenderId, setSelectedTenderId] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [deleteSuccess, setDeleteSuccess] = useState<boolean>(false);
+  const [categories] = useState<string[]>([
+    'CONSTRUCTION',
+    'INFRASTRUCTURE',
+    'SERVICES',
+    'TECHNOLOGY',
+    'HEALTHCARE',
+    'EDUCATION',
+    'TRANSPORTATION',
+    'ENVIRONMENT'
+  ]);
 
-  /**
-   * Fetches tender data from the backend
-   */
   const fetchTenders = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+      
       console.log('Fetching tenders with token:', token?.substring(0, 10) + '...');
       
       const response = await fetch('http://localhost:8000/api/tenders/', {
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
       
       console.log('Response status:', response.status);
       
+      if (response.status === 401) {
+        console.error('Authentication failed');
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         console.log('Raw API response:', JSON.stringify(data, null, 2));
         
-        // Map the backend data to our frontend Tender interface
         if (Array.isArray(data)) {
           const mappedData = data.map(item => ({
             tender_id: item.id.toString(),
             title: item.title || '',
             description: item.description || '',
             budget: item.budget || '0',
-            notice_date: item.notice_date || '',  // Use notice_date from backend
+            notice_date: item.notice_date || '',
             close_date: item.submission_deadline || '',
-            winner_date: '', // Will be added in future
+            winner_date: item.winner_date || '',
             status: item.status || 'PENDING',
             category: item.category || 'General',
             created_by: item.created_by
@@ -113,11 +144,6 @@ const BrowseTender = () => {
           console.log('Mapped tender data:', mappedData);
           setTenders(mappedData);
           setFilteredTenders(mappedData);
-          
-          // Since category is not yet implemented in backend, we'll use some default categories
-          const defaultCategories = ['General', 'Construction', 'Infrastructure', 'Services'];
-          setCategories(defaultCategories);
-          console.log('Available categories:', defaultCategories);
         } else {
           console.error('Received data is not an array:', data);
         }
@@ -131,12 +157,17 @@ const BrowseTender = () => {
   };
 
   useEffect(() => {
+    // Check if user is logged in and has token
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Get user type from local storage or decode from token
+      // For now we'll force CITY to enable delete
+      setUserRole('CITY');
+    }
+    
     fetchTenders();
   }, []);
 
-  /**
-   * Filters tenders based on search term and selected category
-   */
   useEffect(() => {
     let filtered = tenders;
     
@@ -154,37 +185,43 @@ const BrowseTender = () => {
     setFilteredTenders(filtered);
   }, [searchTerm, selectedCategory, tenders]);
 
-  /**
-   * Formats date string for display
-   */
-  const formatDate = (dateString: string) => {
-    if (!dateString) {
-      return '-';
-    }
-    try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) {
-        console.log('Invalid date string:', dateString);
-        return '-';
-      }
-      
-      return date.toLocaleString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch (error) {
-      console.error('Error formatting date:', dateString, error);
-      return '-';
-    }
+  const handleDeleteClick = (tenderId: string) => {
+    setSelectedTenderId(tenderId);
+    setDeleteConfirmOpen(true);
   };
 
-  // Add debug logging for filtered tenders
-  useEffect(() => {
-    console.log('Current filtered tenders:', filteredTenders);
-  }, [filteredTenders]);
+  const handleDeleteConfirm = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`http://localhost:8000/api/tenders/${selectedTenderId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to delete tender');
+      }
+
+      // If deletion was successful, refresh the tender list
+      await fetchTenders();
+      setDeleteConfirmOpen(false);
+      setSelectedTenderId('');
+      
+      // Show success message
+      setDeleteSuccess(true);
+    } catch (err) {
+      console.error('Error deleting tender:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete tender');
+    }
+  };
 
   return (
     <PageContainer>
@@ -192,6 +229,18 @@ const BrowseTender = () => {
         <Typography variant="h4" sx={{ mb: 4, color: '#000', fontFamily: 'Outfit', fontWeight: 300 }}>
           Browse Tenders ({filteredTenders.length})
         </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        
+        {deleteSuccess && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            Tender successfully deleted.
+          </Alert>
+        )}
 
         <SearchContainer>
           <TextField
@@ -218,7 +267,7 @@ const BrowseTender = () => {
               <MenuItem value="">All Categories</MenuItem>
               {categories.map((category) => (
                 <MenuItem key={category} value={category}>
-                  {category}
+                  {CATEGORY_DISPLAY_NAMES[category]}
                 </MenuItem>
               ))}
             </Select>
@@ -236,6 +285,7 @@ const BrowseTender = () => {
                 <TableCell>Winner Date</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Category</TableCell>
+                {userRole === 'CITY' && <TableCell>Actions</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -247,12 +297,23 @@ const BrowseTender = () => {
                   <TableCell>{formatDate(tender.close_date)}</TableCell>
                   <TableCell>{formatDate(tender.winner_date)}</TableCell>
                   <TableCell>{tender.status}</TableCell>
-                  <TableCell>{tender.category}</TableCell>
+                  <TableCell>{CATEGORY_DISPLAY_NAMES[tender.category] || tender.category}</TableCell>
+                  {userRole === 'CITY' && (
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleDeleteClick(tender.tender_id)}
+                        color="error"
+                        size="small"
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  )}
                 </TableRow>
               ))}
               {filteredTenders.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={userRole === 'CITY' ? 8 : 7} align="center">
                     No tenders found
                   </TableCell>
                 </TableRow>
@@ -260,6 +321,25 @@ const BrowseTender = () => {
             </TableBody>
           </Table>
         </TableContainer>
+
+        <Dialog
+          open={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+        >
+          <DialogTitle>Confirm Delete</DialogTitle>
+          <DialogContent>
+            <Typography>Are you sure you want to delete this tender?</Typography>
+            <Typography variant="caption" color="error">
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+            <Button onClick={handleDeleteConfirm} color="error" variant="contained">
+              Delete
+            </Button>
+          </DialogActions>
+        </Dialog>
       </ContentWrapper>
     </PageContainer>
   );
