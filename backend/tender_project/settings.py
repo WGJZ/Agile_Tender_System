@@ -23,15 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'your-secret-key'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'your-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     'agile-tender.up.railway.app',  # Railway backend url
+    '*',  # 临时允许所有域名
 ]
 
 
@@ -90,6 +91,26 @@ DATABASES = {
         default='sqlite:///db.sqlite3',
         conn_max_age=600
     )
+}
+
+if 'DATABASE_URL' in os.environ:
+    print("Using DATABASE_URL from environment:", os.environ.get('DATABASE_URL', ''))
+
+# 添加数据库日志记录
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        },
+    },
 }
 
 
