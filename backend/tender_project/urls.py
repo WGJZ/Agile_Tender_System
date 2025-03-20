@@ -18,8 +18,22 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import RedirectView
+from django.http import JsonResponse
+
+# 简单的根路径视图
+def root_view(request):
+    return JsonResponse({
+        "message": "Agile Tender API is running",
+        "api_endpoints": {
+            "api": "/api/",
+            "health": "/api/health/",
+            "admin": "/admin/"
+        }
+    })
 
 urlpatterns = [
+    path('', root_view, name='api-root'),  # 添加根路径视图
     path('admin/', admin.site.urls),
     path('api/', include('tender_app.urls')),  # 所有 API 路由都以 /api/ 开头
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
