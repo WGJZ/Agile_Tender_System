@@ -100,10 +100,16 @@ if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
         'connect_timeout': 10,
     }
 
+# 在生产环境中禁用迁移检查，假设数据库已经设置好
+if not DEBUG:
+    MIGRATION_MODULES = {app: None for app in INSTALLED_APPS}
+
 # Print database configuration for debugging
 if 'DATABASE_URL' in os.environ:
+    import json
     print("Using DATABASE_URL from environment:", os.environ.get('DATABASE_URL', ''))
     print("Database engine:", DATABASES['default'].get('ENGINE', 'unknown'))
+    print("Database configuration:", json.dumps({k: v for k, v in DATABASES['default'].items() if k != 'PASSWORD'}, indent=2))
 
 # 添加数据库日志记录
 LOGGING = {
