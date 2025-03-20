@@ -47,8 +47,8 @@ AWS_DEFAULT_ACL = 'public-read'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.railway.app',  # 允许所有railway子域名
-    'your-app-name.railway.app'  # 添加Railway生成的域名
+    '.railway.app',  # allow all railway subdomains
+    'agile-tender.up.railway.app'  # add Railway domain
 ]
 
 # CORS设置
