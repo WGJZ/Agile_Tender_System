@@ -93,8 +93,17 @@ DATABASES = {
     )
 }
 
+# Add PostgreSQL specific options
+if DATABASES['default']['ENGINE'] == 'django.db.backends.postgresql':
+    DATABASES['default']['OPTIONS'] = {
+        'options': '-c search_path=public',
+        'connect_timeout': 10,
+    }
+
+# Print database configuration for debugging
 if 'DATABASE_URL' in os.environ:
     print("Using DATABASE_URL from environment:", os.environ.get('DATABASE_URL', ''))
+    print("Database engine:", DATABASES['default'].get('ENGINE', 'unknown'))
 
 # 添加数据库日志记录
 LOGGING = {
@@ -148,9 +157,30 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Supabase Storage 配置 (S3 兼容)
+AWS_ACCESS_KEY_ID = os.environ.get('SUPABASE_STORAGE_KEY', '')
+AWS_SECRET_ACCESS_KEY = os.environ.get('SUPABASE_STORAGE_SECRET', '')
+AWS_STORAGE_BUCKET_NAME = os.environ.get('SUPABASE_STORAGE_BUCKET', '')
+AWS_S3_REGION_NAME = 'eu-central-1'  # 根据您的 Supabase 区域调整
+AWS_S3_ENDPOINT_URL = os.environ.get('SUPABASE_URL', '')
+AWS_DEFAULT_ACL = 'public-read'
+AWS_S3_SIGNATURE_VERSION = 's3v4'
+AWS_QUERYSTRING_AUTH = False
+AWS_S3_VERIFY = True
+
+# 如果启用了 Supabase Storage，使用 S3 存储
+if AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY and AWS_STORAGE_BUCKET_NAME:
+    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3StaticStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
