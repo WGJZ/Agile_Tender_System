@@ -1,4 +1,4 @@
-// 模拟公开招标数据
+// 获取所有投标API
 export default function handler(req, res) {
   // 允许跨域请求
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -43,6 +43,18 @@ export default function handler(req, res) {
         category: "construction",
         location: "广州市",
         created_at: "2024-10-10"
+      },
+      {
+        id: 4,
+        title: "市政垃圾处理厂建设",
+        description: "建设一座现代化垃圾处理厂，包括分类、回收和无害化处理设施",
+        budget: 1200000,
+        deadline: "2025-03-20",
+        status: "open",
+        is_public: false,
+        category: "environment",
+        location: "深圳市",
+        created_at: "2024-10-15"
       }
     ]
   });

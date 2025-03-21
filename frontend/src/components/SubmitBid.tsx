@@ -107,7 +107,7 @@ function BidForm({ tenderId, onBidSubmitted }: SubmitBidProps) {
         proposal_description: additionalNotes,
       };
 
-      const result = await api.bids.create(bidData);
+      const result = await api.bids.create(tenderId.toString(), bidData);
       
       setSuccess('Your bid has been submitted successfully!');
       // 通知父组件已成功提交

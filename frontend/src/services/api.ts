@@ -33,62 +33,81 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// API服务
+// API配置和请求函数
+const API_URL = '/api';
+
+// 基本HTTP请求函数
+const get = async (url: string) => {
+  try {
+    console.log(`发送GET请求到: ${API_URL}${url}`);
+    const response = await fetch(`${API_URL}${url}`);
+    
+    // 检查响应状态
+    if (!response.ok) {
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`请求失败: ${error}`);
+    throw error;
+  }
+};
+
+const post = async (url: string, data: any) => {
+  try {
+    console.log(`发送POST请求到: ${API_URL}${url}`);
+    const response = await fetch(`${API_URL}${url}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+    
+    // 检查响应状态
+    if (!response.ok) {
+      throw new Error(`API返回错误: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`请求失败: ${error}`);
+    throw error;
+  }
+};
+
+// API接口
 const api = {
-  auth: {
-    login: async (username: string, password: string) => {
-      const response = await apiClient.post('/api/auth/token', { username, password });
-      return response.data;
-    },
-    register: async (userData: any) => {
-      const response = await apiClient.post('/api/auth/register', userData);
-      return response.data;
-    },
-  },
   tenders: {
-    getAll: async () => {
-      const response = await apiClient.get('/api/tenders');
-      return response.data;
+    getAll: () => get('/tenders/'),
+    getById: (id: string, isPublic?: boolean) => {
+      const url = isPublic 
+        ? `/tenders/public/${id}/` 
+        : `/tenders/${id}/`;
+      return get(url);
     },
-    getPublic: async () => {
-      const response = await apiClient.get('/api/tenders/public');
-      return response.data;
-    },
-    getById: async (id: string, isPublic = false) => {
-      const endpoint = isPublic ? `/api/tenders/public/${id}` : `/api/tenders/${id}`;
-      const response = await apiClient.get(endpoint);
-      return response.data;
-    },
-    create: async (tenderData: any) => {
-      const response = await apiClient.post('/api/tenders', tenderData);
-      return response.data;
-    },
-    update: async (id: string, tenderData: any) => {
-      const response = await apiClient.put(`/api/tenders/${id}`, tenderData);
-      return response.data;
-    },
-    delete: async (id: string) => {
-      const response = await apiClient.delete(`/api/tenders/${id}`);
-      return response.data;
-    },
-    getBids: async (tenderId: string) => {
-      const response = await apiClient.get(`/api/tenders/${tenderId}/bids`);
-      return response.data;
-    },
+    getBids: (tenderId: string) => get(`/tenders/${tenderId}/bids/`),
+    create: (tenderData: any) => post('/tenders/create/', tenderData),
+    update: (id: string, tenderData: any) => post(`/tenders/${id}/update/`, tenderData),
+    delete: (id: string) => post(`/tenders/${id}/delete/`, {}),
+    toggleVisibility: (id: string, isPublic: boolean) => post(`/tenders/${id}/toggle-visibility/`, { is_public: isPublic }),
   },
   bids: {
-    create: async (tenderId: string, bidData: any) => {
-      const response = await apiClient.post(`/api/tenders/${tenderId}/bids`, bidData);
-      return response.data;
-    },
-    getAll: async () => {
-      const response = await apiClient.get('/api/bids');
-      return response.data;
-    },
-    getMyBids: async () => {
-      const response = await apiClient.get('/api/bids/my-bids');
-      return response.data;
-    },
+    create: (tenderId: string, bidData: any) => post(`/bids/create/${tenderId}/`, bidData),
+    getAll: () => get('/bids/'),
+    getMyBids: () => get('/bids/my-bids/')
+  },
+  auth: {
+    login: (credentials: { username: string, password: string }) => 
+      post('/auth/token/', credentials),
+    register: (userData: any) => post('/auth/register/', userData),
+  },
+  public: {
+    getTenders: () => {
+      console.log('使用公开API路径');
+      return get('/tenders/public/');
+    }
   },
   users: {
     getProfile: async () => {
