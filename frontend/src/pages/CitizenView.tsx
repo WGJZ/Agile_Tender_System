@@ -112,6 +112,10 @@ interface Tender {
   is_public: boolean;
   location?: string;
   created_at: string;
+  winner_name?: string;
+  winning_bid?: string;
+  requirements?: string;
+  contact_email?: string;
 }
 
 // 状态过滤选项接口
