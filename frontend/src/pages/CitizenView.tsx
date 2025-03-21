@@ -36,7 +36,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import InfoIcon from '@mui/icons-material/Info';
-import { API_URL } from '../api/config'; // 导入 API_URL
+import { API_URL } from '../api/config'; // Import API_URL
 import api from '../services/api';
 
 const PageContainer = styled('div')({
@@ -80,27 +80,27 @@ const ImageContainer = styled('div')({
   marginBottom: '1rem',
 });
 
-// 投标状态常量
+// Tender status constants
 const TENDER_STATUSES = {
-  OPEN: '开放中',
-  CLOSED: '已关闭',
-  AWARDED: '已授标',
-  DRAFT: '草稿',
+  OPEN: 'Open',
+  CLOSED: 'Closed',
+  AWARDED: 'Awarded',
+  DRAFT: 'Draft',
 };
 
-// 投标类别常量
+// Tender category constants
 const TENDER_CATEGORIES = {
-  CONSTRUCTION: '建筑工程',
-  TECHNOLOGY: '技术服务',
-  SUPPLIES: '物资采购',
-  CONSULTING: '咨询服务',
-  ENVIRONMENT: '环境工程',
-  HEALTHCARE: '医疗卫生',
-  EDUCATION: '教育服务',
-  OTHER: '其他',
+  CONSTRUCTION: 'Construction',
+  TECHNOLOGY: 'Technology',
+  SUPPLIES: 'Supplies',
+  CONSULTING: 'Consulting',
+  ENVIRONMENT: 'Environment',
+  HEALTHCARE: 'Healthcare',
+  EDUCATION: 'Education',
+  OTHER: 'Other',
 };
 
-// 投标项接口
+// Tender interface
 interface Tender {
   id: number;
   title: string;
@@ -118,13 +118,13 @@ interface Tender {
   contact_email?: string;
 }
 
-// 状态过滤选项接口
+// Status filter option interface
 interface StatusOption {
   value: string;
   label: string;
 }
 
-// 获取所有可用的状态选项
+// Get all available status options
 const getStatusOptions = (): StatusOption[] => {
   return Object.entries(TENDER_STATUSES).map(([value, label]) => ({
     value,
@@ -132,7 +132,7 @@ const getStatusOptions = (): StatusOption[] => {
   }));
 };
 
-// 获取所有可用的类别选项
+// Get all available category options
 const getCategoryOptions = (): StatusOption[] => {
   return Object.entries(TENDER_CATEGORIES).map(([value, label]) => ({
     value,
@@ -174,19 +174,19 @@ const CitizenView: React.FC = () => {
     setError(null);
     try {
       const response = await api.public.getTenders();
-      console.log('API 响应数据:', response);
+      console.log('API Response Data:', response);
       
-      // 检查响应格式
+      // Check response format
       const tendersData = response.tenders || response;
       if (!Array.isArray(tendersData)) {
-        throw new Error('获取到的数据格式不正确');
+        throw new Error('Invalid data format received');
       }
       
       setTenders(tendersData);
       setFilteredTenders(tendersData);
     } catch (err: any) {
       console.error('Error fetching tenders:', err);
-      setError(err.message || '获取招标数据失败');
+      setError(err.message || 'Failed to fetch tender data');
       setTenders([]);
       setFilteredTenders([]);
     } finally {
@@ -333,11 +333,11 @@ const CitizenView: React.FC = () => {
   const handleViewDetails = (tender: Tender) => {
     console.log('Selected tender details:', tender);
     
-    // 对于已授标但没有获奖者信息的招标，添加示例数据
+    // For awarded tenders without winner info, add sample data
     let tenderToShow = { ...tender };
     
     if (tender.status === 'AWARDED' && (!tender.winner_name || tender.winner_name.trim() === '')) {
-      // 根据招标ID使用一致的示例数据
+      // Use consistent sample data based on tender ID
       const winnerIndex = parseInt(tender.id.toString()) % 5;
       const winnerNames = [
         "Construction Excellence Ltd.",
@@ -347,7 +347,7 @@ const CitizenView: React.FC = () => {
         "Quality Contractors Alliance"
       ];
       
-      // 使用招标预算的95-98%作为中标金额
+      // Use 95-98% of tender budget as winning bid amount
       const budgetValue = parseFloat(tender.budget.toString());
       const bidPercentage = 0.95 + (parseInt(tender.id.toString()) % 4) * 0.01; // 95-98%
       const winningBid = Math.round(budgetValue * bidPercentage).toString();
@@ -364,7 +364,7 @@ const CitizenView: React.FC = () => {
     setSelectedTender(tenderToShow);
     setDetailsOpen(true);
     
-    // 如果是已授标招标，尝试获取获奖者信息
+    // If tender is awarded, try to fetch winner info
     if (tender.status === 'AWARDED') {
       fetchWinnerInfo(tender.id);
     }
@@ -395,17 +395,17 @@ const CitizenView: React.FC = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
-        浏览招标项目
+        Browse Tenders
       </Typography>
 
-      {/* 搜索和过滤器 */}
+      {/* Search and filters */}
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="搜索招标项目..."
+              placeholder="Search tenders..."
               value={searchTerm}
               onChange={handleSearchChange}
               InputProps={{
@@ -419,20 +419,20 @@ const CitizenView: React.FC = () => {
           </Grid>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth variant="outlined">
-              <InputLabel id="status-filter-label">状态</InputLabel>
+              <InputLabel id="status-filter-label">Status</InputLabel>
               <Select
                 labelId="status-filter-label"
                 id="status-filter"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                label="状态"
+                label="Status"
                 startAdornment={
                   <InputAdornment position="start">
                     <FilterListIcon />
                   </InputAdornment>
                 }
               >
-                <MenuItem value="ALL">所有状态</MenuItem>
+                <MenuItem value="ALL">All Statuses</MenuItem>
                 {getStatusOptions().map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -443,20 +443,20 @@ const CitizenView: React.FC = () => {
           </Grid>
           <Grid item xs={12} md={3}>
             <FormControl fullWidth variant="outlined">
-              <InputLabel id="category-filter-label">类别</InputLabel>
+              <InputLabel id="category-filter-label">Category</InputLabel>
               <Select
                 labelId="category-filter-label"
                 id="category-filter"
                 value={categoryFilter}
                 onChange={handleCategoryChange}
-                label="类别"
+                label="Category"
                 startAdornment={
                   <InputAdornment position="start">
                     <FilterListIcon />
                   </InputAdornment>
                 }
               >
-                <MenuItem value="ALL">所有类别</MenuItem>
+                <MenuItem value="ALL">All Categories</MenuItem>
                 {getCategoryOptions().map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -468,28 +468,28 @@ const CitizenView: React.FC = () => {
         </Grid>
       </Box>
 
-      {/* 加载状态 */}
+      {/* Loading state */}
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
           <CircularProgress />
         </Box>
       )}
 
-      {/* 错误消息 */}
+      {/* Error message */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
         </Alert>
       )}
 
-      {/* 无结果提示 */}
+      {/* No results message */}
       {!loading && !error && filteredTenders.length === 0 && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          没有找到符合条件的招标项目
+          No tenders found matching your criteria
         </Alert>
       )}
 
-      {/* 投标项列表 */}
+      {/* Tender list */}
       {!loading && !error && filteredTenders.length > 0 && (
         <Grid container spacing={3}>
           {filteredTenders.map((tender) => (
@@ -503,20 +503,20 @@ const CitizenView: React.FC = () => {
                     {tender.description}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>预算:</strong> €{tender.budget.toLocaleString()}
+                    <strong>Budget:</strong> €{tender.budget.toLocaleString()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>截止日期:</strong> {new Date(tender.deadline).toLocaleDateString()}
+                    <strong>Deadline:</strong> {new Date(tender.deadline).toLocaleDateString()}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>类别:</strong> {TENDER_CATEGORIES[tender.category as keyof typeof TENDER_CATEGORIES] || tender.category}
+                    <strong>Category:</strong> {TENDER_CATEGORIES[tender.category as keyof typeof TENDER_CATEGORIES] || tender.category}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    <strong>状态:</strong> {TENDER_STATUSES[tender.status as keyof typeof TENDER_STATUSES] || tender.status}
+                    <strong>Status:</strong> {TENDER_STATUSES[tender.status as keyof typeof TENDER_STATUSES] || tender.status}
                   </Typography>
                   {tender.location && (
                     <Typography variant="body2" color="text.secondary">
-                      <strong>地点:</strong> {tender.location}
+                      <strong>Location:</strong> {tender.location}
                     </Typography>
                   )}
                 </CardContent>
@@ -527,7 +527,7 @@ const CitizenView: React.FC = () => {
                     component={Link} 
                     to={`/tenders/public/${tender.id}`}
                   >
-                    查看详情
+                    View Details
                   </Button>
                 </CardActions>
               </Card>
@@ -591,7 +591,7 @@ const CitizenView: React.FC = () => {
                   <Typography>{selectedTender.contact_email || 'No contact information provided.'}</Typography>
                 </Grid>
 
-                {/* 添加中标信息部分 - 始终显示获奖信息 */}
+                {/* Add award information section - always show award info */}
                 {selectedTender.status === 'AWARDED' && (
                   <>
                     <Grid item xs={12}>
@@ -622,7 +622,7 @@ const CitizenView: React.FC = () => {
                 )}
               </Grid>
 
-              {/* 仅对未登录的公司用户显示提示 */}
+              {/* Only show hint for non-logged-in company users */}
               <Box sx={{ mt: 3, p: 2, bgcolor: 'rgba(0, 0, 0, 0.05)', borderRadius: 1 }}>
                 <Typography variant="body2" color="text.secondary">
                   {selectedTender.status === 'OPEN' ? 

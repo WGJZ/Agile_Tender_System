@@ -1,19 +1,19 @@
 import axios from 'axios';
 
-// 获取当前环境的URL
+// Get current environment URL
 const getBaseUrl = () => {
-  // 在开发环境中使用本地服务器
+  // Use local server in development environment
   if (process.env.NODE_ENV === 'development') {
     return 'http://localhost:8000';
   }
   
-  // 在生产环境中使用Vercel无服务器API
-  return '';  // 空字符串表示相对路径，将使用当前域名
+  // Use Vercel serverless API in production
+  return '';  // Empty string means relative path, will use current domain
 };
 
 const baseURL = getBaseUrl();
 
-// 创建axios实例
+// Create axios instance
 const apiClient = axios.create({
   baseURL,
   headers: {
@@ -21,7 +21,7 @@ const apiClient = axios.create({
   },
 });
 
-// 请求拦截器，添加认证token
+// Request interceptor, add authentication token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -33,47 +33,47 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// API配置和请求函数
-const API_URL = '';  // 修改为空字符串，使用相对路径
+// API configuration and request functions
+const API_URL = '';  // Changed to empty string, use relative path
 
-// 基本HTTP请求函数
+// Basic HTTP request functions
 const get = async (url: string) => {
   try {
-    console.log(`发送GET请求到: ${url}`);
+    console.log(`Sending GET request to: ${url}`);
     const response = await fetch(`${url}`);
     
-    // 检查响应状态
+    // Check response status
     if (!response.ok) {
-      throw new Error(`API返回错误: ${response.status}`);
+      throw new Error(`API returned error: ${response.status}`);
     }
     
-    // 检查内容类型
+    // Check content type
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      // 记录非JSON响应以便调试
+      // Log non-JSON response for debugging
       const text = await response.text();
-      console.error('收到非JSON响应:', text.substring(0, 150) + '...');
-      throw new Error('API未返回JSON数据');
+      console.error('Received non-JSON response:', text.substring(0, 150) + '...');
+      throw new Error('API did not return JSON data');
     }
     
     const data = await response.json();
     
-    // 处理空响应或预期格式错误
+    // Handle empty response or unexpected format
     if (!data) {
-      throw new Error('API返回空数据');
+      throw new Error('API returned empty data');
     }
     
     return data;
   } catch (error: any) {
-    console.error(`请求失败: ${error}`);
-    // 重新抛出错误，但提供更具体的错误消息
-    throw new Error(`API请求失败: ${error.message || '未知错误'}`);
+    console.error(`Request failed: ${error}`);
+    // Rethrow with more specific error message
+    throw new Error(`API request failed: ${error.message || 'Unknown error'}`);
   }
 };
 
 const post = async (url: string, data: any) => {
   try {
-    console.log(`发送POST请求到: ${url}`);
+    console.log(`Sending POST request to: ${url}`);
     const response = await fetch(`${url}`, {
       method: 'POST',
       headers: {
@@ -83,28 +83,28 @@ const post = async (url: string, data: any) => {
       body: JSON.stringify(data),
     });
     
-    // 检查响应状态
+    // Check response status
     if (!response.ok) {
-      throw new Error(`API返回错误: ${response.status}`);
+      throw new Error(`API returned error: ${response.status}`);
     }
     
-    // 检查内容类型
+    // Check content type
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
-      // 记录非JSON响应以便调试
+      // Log non-JSON response for debugging
       const text = await response.text();
-      console.error('收到非JSON响应:', text.substring(0, 150) + '...');
-      throw new Error('API未返回JSON数据');
+      console.error('Received non-JSON response:', text.substring(0, 150) + '...');
+      throw new Error('API did not return JSON data');
     }
     
     return await response.json();
   } catch (error) {
-    console.error(`请求失败: ${error}`);
+    console.error(`Request failed: ${error}`);
     throw error;
   }
 };
 
-// API接口
+// API interfaces
 const api = {
   tenders: {
     getAll: (onlyPublic?: boolean) => {
@@ -136,7 +136,7 @@ const api = {
   },
   public: {
     getTenders: () => {
-      console.log('使用公开API路径');
+      console.log('Using public API path');
       return get('/api/tenders/public');
     }
   },
