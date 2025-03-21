@@ -2,10 +2,10 @@
     "$schema": "https://railway.app/railway.schema.json",
     "build": {
         "builder": "NIXPACKS",
-        "buildCommand": "echo 'Building...' && cd backend && pip install -r requirements.txt && python manage.py collectstatic --noinput"
+        "buildCommand": "echo 'Building...' && pip install -r requirements.txt && python manage.py collectstatic --noinput"
     },
     "deploy": {
-        "startCommand": "cd backend && python manage.py migrate --noinput && gunicorn tender_project.wsgi --log-level=debug --bind=0.0.0.0:8080",
+        "startCommand": "python manage.py migrate --noinput && gunicorn tender_project.wsgi --log-level=debug --bind=0.0.0.0:8080",
         "healthcheckPath": "/api/health/",
         "healthcheckTimeout": 100,
         "restartPolicyType": "ON_FAILURE",
