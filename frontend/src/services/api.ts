@@ -34,13 +34,13 @@ apiClient.interceptors.request.use(
 );
 
 // API配置和请求函数
-const API_URL = '/api';
+const API_URL = '';  // 修改为空字符串，使用相对路径
 
 // 基本HTTP请求函数
 const get = async (url: string) => {
   try {
-    console.log(`发送GET请求到: ${API_URL}${url}`);
-    const response = await fetch(`${API_URL}${url}`);
+    console.log(`发送GET请求到: ${url}`);
+    const response = await fetch(`${url}`);
     
     // 检查响应状态
     if (!response.ok) {
@@ -79,8 +79,8 @@ const get = async (url: string) => {
 
 const post = async (url: string, data: any) => {
   try {
-    console.log(`发送POST请求到: ${API_URL}${url}`);
-    const response = await fetch(`${API_URL}${url}`, {
+    console.log(`发送POST请求到: ${url}`);
+    const response = await fetch(`${url}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -104,36 +104,36 @@ const post = async (url: string, data: any) => {
 const api = {
   tenders: {
     getAll: (onlyPublic?: boolean) => {
-      const url = onlyPublic ? '/tenders/public/' : '/tenders/';
+      const url = onlyPublic ? '/api/tenders/public' : '/api/tenders/';
       return get(url);
     },
     getById: (id: string, isPublic?: boolean) => {
       const url = isPublic 
-        ? `/tenders/public/${id}/` 
-        : `/tenders/${id}/`;
+        ? `/api/tenders/public/${id}` 
+        : `/api/tenders/${id}/`;
       return get(url);
     },
-    getBids: (tenderId: string) => get(`/tenders/${tenderId}/bids/`),
-    create: (tenderData: any) => post('/tenders/create/', tenderData),
-    update: (id: string, tenderData: any) => post(`/tenders/${id}/update/`, tenderData),
-    delete: (id: string) => post(`/tenders/${id}/delete/`, {}),
-    toggleVisibility: (id: string, isPublic: boolean) => post(`/tenders/${id}/toggle-visibility/`, { is_public: isPublic }),
+    getBids: (tenderId: string) => get(`/api/tenders/${tenderId}/bids/`),
+    create: (tenderData: any) => post('/api/tenders/create/', tenderData),
+    update: (id: string, tenderData: any) => post(`/api/tenders/${id}/update/`, tenderData),
+    delete: (id: string) => post(`/api/tenders/${id}/delete/`, {}),
+    toggleVisibility: (id: string, isPublic: boolean) => post(`/api/tenders/${id}/toggle-visibility/`, { is_public: isPublic }),
   },
   bids: {
-    create: (tenderId: string, bidData: any) => post(`/bids/create/${tenderId}/`, bidData),
-    getAll: () => get('/bids/'),
-    getMyBids: () => get('/bids/my-bids/'),
-    selectWinner: (bidId: string) => post(`/bids/${bidId}/select-winner/`, {})
+    create: (tenderId: string, bidData: any) => post(`/api/bids/create/${tenderId}/`, bidData),
+    getAll: () => get('/api/bids/'),
+    getMyBids: () => get('/api/bids/my-bids/'),
+    selectWinner: (bidId: string) => post(`/api/bids/${bidId}/select-winner/`, {})
   },
   auth: {
     login: (credentials: { username: string, password: string }) => 
-      post('/auth/token/', credentials),
-    register: (userData: any) => post('/auth/register/', userData),
+      post('/api/auth/token/', credentials),
+    register: (userData: any) => post('/api/auth/register/', userData),
   },
   public: {
     getTenders: () => {
       console.log('使用公开API路径');
-      return get('/tenders/public/');
+      return get('/api/tenders/public');
     }
   },
   users: {
