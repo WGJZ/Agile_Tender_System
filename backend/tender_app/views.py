@@ -297,7 +297,6 @@ def health_check(request):
                 "debug": settings.DEBUG,
                 "allowed_hosts": settings.ALLOWED_HOSTS,
                 "cors_allow_all": settings.CORS_ALLOW_ALL_ORIGINS,
-                "cors_allowed_origins": settings.CORS_ALLOWED_ORIGINS,
             }
         },
         status=HTTP_200_OK
