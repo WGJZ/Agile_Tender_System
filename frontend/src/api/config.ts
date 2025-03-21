@@ -1,9 +1,11 @@
 // API 基础 URL，使用CORS代理解决CORS问题
-// 开发环境使用本地API，生产环境使用Railway API
+// 开发环境使用本地API，生产环境使用AllOrigins CORS代理
 // 添加注释触发重新部署
-// 由于corsproxy.io存在问题，我们尝试直接请求API
+// 由于直接请求和corsproxy.io存在问题，改用AllOrigins代理
 
-export const API_BASE_URL = 'https://agile-tender.up.railway.app';
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+export const API_BASE_URL = `${CORS_PROXY}${encodeURIComponent('https://agile-tender.up.railway.app')}`;
 
 // 确保 API 路径包含 /api
 export const API_URL = `${API_BASE_URL}/api`;
