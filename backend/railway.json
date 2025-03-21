@@ -5,7 +5,7 @@
         "buildCommand": "echo 'Building...' && pip install -r requirements.txt && python manage.py collectstatic --noinput"
     },
     "deploy": {
-        "startCommand": "python manage.py migrate --zero auth contenttypes && python manage.py migrate --no-input && gunicorn tender_project.wsgi --log-level=debug --bind=0.0.0.0:8080",
+        "startCommand": "python manage.py migrate auth zero && python manage.py migrate contenttypes zero && python manage.py migrate --no-input && gunicorn tender_project.wsgi --log-level=debug --bind=0.0.0.0:8080",
         "healthcheckPath": "/api/health/",
         "healthcheckTimeout": 100,
         "restartPolicyType": "ON_FAILURE",
