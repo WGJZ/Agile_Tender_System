@@ -144,7 +144,7 @@ const CitizenView: React.FC = () => {
   const fetchTenders = async () => {
     setLoading(true);
     try {
-      const data = await api.tenders.getAll(false); // false to get only public tenders
+      const data = await api.tenders.getAll(true); // true to get only public tenders
       setTenders(data);
       setFilteredTenders(data);
     } catch (error) {

@@ -134,8 +134,9 @@ const PublicTenders: React.FC = () => {
   const fetchTenders = async () => {
     setLoading(true);
     try {
-      const data = await api.tenders.getAll(false); // false为只获取公开招标
+      const data = await api.tenders.getAll(true); // true为只获取公开招标
       setTenders(data);
+      setFilteredTenders(data);
     } catch (error) {
       console.error('Error fetching tenders:', error);
       setError('Failed to load tenders. Please try again later.');

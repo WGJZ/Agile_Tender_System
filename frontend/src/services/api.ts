@@ -80,7 +80,10 @@ const post = async (url: string, data: any) => {
 // API接口
 const api = {
   tenders: {
-    getAll: () => get('/tenders/'),
+    getAll: (onlyPublic?: boolean) => {
+      const url = onlyPublic ? '/tenders/public/' : '/tenders/';
+      return get(url);
+    },
     getById: (id: string, isPublic?: boolean) => {
       const url = isPublic 
         ? `/tenders/public/${id}/` 
