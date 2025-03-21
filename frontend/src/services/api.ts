@@ -8,6 +8,7 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   const token = getToken();
   const headers = {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
     ...(token ? { 'Authorization': `Token ${token}` } : {}),
     ...(options.headers || {})
   };

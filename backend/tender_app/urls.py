@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .views import (
     TenderViewSet, BidViewSet, UserRegistrationView, login,
-    health_check
+    health_check, public_tenders
 )
 
 router = DefaultRouter()
@@ -15,6 +15,7 @@ urlpatterns = [
     path('auth/register/', UserRegistrationView.as_view(), name='register'),
     path('auth/login/', login, name='login'),
     path('health/', health_check, name='health_check'),
+    path('tenders/public/', public_tenders, name='public_tenders'),
 ]
 
 # DefaultRouter automatically creates URLs for all actions on ViewSets
