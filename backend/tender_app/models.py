@@ -73,7 +73,7 @@ class Bid(models.Model):
     tender = models.ForeignKey(Tender, on_delete=models.CASCADE, related_name='bids')
     company = models.ForeignKey(User, on_delete=models.CASCADE)
     bidding_price = models.DecimalField(max_digits=12, decimal_places=2)
-    documents = models.FileField(upload_to='bid_documents/')
+    documents = models.FileField(upload_to='bid_documents/', blank=True, null=True)
     submission_date = models.DateTimeField(auto_now_add=True)
     is_winner = models.BooleanField(default=False)
     additional_notes = models.TextField(blank=True, null=True)

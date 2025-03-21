@@ -28,6 +28,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import api from '../../services/api';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -131,21 +132,13 @@ const PublicTenders: React.FC = () => {
   }, []);
 
   const fetchTenders = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Public API endpoint - no auth required
-      const response = await fetch('http://localhost:8000/api/tenders/public/');
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch tenders');
-      }
-
-      const data = await response.json();
+      const data = await api.tenders.getAll(false); // false为只获取公开招标
       setTenders(data);
     } catch (error) {
       console.error('Error fetching tenders:', error);
-      setError('Failed to load tenders. Please try again.');
+      setError('Failed to load tenders. Please try again later.');
     } finally {
       setLoading(false);
     }

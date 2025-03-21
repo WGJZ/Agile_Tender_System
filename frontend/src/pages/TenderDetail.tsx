@@ -18,12 +18,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Grid,
+  IconButton,
 } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BusinessIcon from '@mui/icons-material/Business';
 import api from '../services/api';
+import { API_BASE_URL } from '../api/config';
+import CloseIcon from '@mui/icons-material/Close';
+import FullscreenIcon from '@mui/icons-material/Fullscreen';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -102,15 +108,17 @@ const TenderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [userType, setUserType] = useState<'city' | 'company' | 'public'>('public');
-  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(null);
   const [documentPreviewOpen, setDocumentPreviewOpen] = useState(false);
+  const [documentPreviewUrl, setDocumentPreviewUrl] = useState('');
+  const [selectedBid, setSelectedBid] = useState<any>(null);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [selectWinnerDialogOpen, setSelectWinnerDialogOpen] = useState(false);
   const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [showWinnerModal, setShowWinnerModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     // Determine user type from URL or token
@@ -405,32 +413,46 @@ const TenderDetail: React.FC = () => {
       </ContentWrapper>
 
       {/* Document Preview Dialog */}
-      <Dialog 
-        open={documentPreviewOpen} 
+      <Dialog
+        open={documentPreviewOpen}
         onClose={() => setDocumentPreviewOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
         <DialogTitle>Document Preview</DialogTitle>
         <DialogContent>
           {documentPreviewUrl ? (
             documentPreviewUrl.endsWith('.pdf') ? (
-              <iframe 
-                src={`http://localhost:8000${documentPreviewUrl}`}
-                style={{ width: '100%', height: '70vh' }}
-                title="Document Preview"
-              />
+              <Box sx={{ position: 'relative', height: '70vh', width: '100%', overflow: 'hidden', borderRadius: 1 }}>
+                <IconButton 
+                  onClick={() => setIsFullscreen(true)}
+                  sx={{ position: 'absolute', top: 5, right: 5, zIndex: 100, bgcolor: 'rgba(255,255,255,0.7)' }}
+                >
+                  <FullscreenIcon />
+                </IconButton>
+                <iframe 
+                  src={`${API_BASE_URL}${documentPreviewUrl}`}
+                  style={{ width: '100%', height: '100%', border: 'none' }}
+                  title="Document Preview"
+                />
+              </Box>
             ) : (
-              <Box sx={{ textAlign: 'center' }}>
+              <Box sx={{ position: 'relative', height: '70vh', width: '100%', overflow: 'hidden', borderRadius: 1 }}>
+                <IconButton 
+                  onClick={() => setIsFullscreen(true)}
+                  sx={{ position: 'absolute', top: 5, right: 5, zIndex: 100, bgcolor: 'rgba(255,255,255,0.7)' }}
+                >
+                  <FullscreenIcon />
+                </IconButton>
                 <img 
-                  src={`http://localhost:8000${documentPreviewUrl}`}
+                  src={`${API_BASE_URL}${documentPreviewUrl}`}
                   alt="Document Preview"
-                  style={{ maxWidth: '100%', maxHeight: '70vh' }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               </Box>
             )
           ) : (
-            <Typography>No document available to preview.</Typography>
+            <Typography>No document available for preview.</Typography>
           )}
         </DialogContent>
         <DialogActions>
@@ -438,13 +460,50 @@ const TenderDetail: React.FC = () => {
           <Button 
             variant="contained" 
             color="primary"
-            href={`http://localhost:8000${documentPreviewUrl}`}
+            href={documentPreviewUrl ? `${API_BASE_URL}${documentPreviewUrl}` : '#'}
             target="_blank"
+            disabled={!documentPreviewUrl}
           >
             Download
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 全屏文档预览 */}
+      {isFullscreen && documentPreviewUrl && (
+        <Box sx={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100vw', 
+          height: '100vh', 
+          bgcolor: 'rgba(0,0,0,0.9)', 
+          zIndex: 9999, 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center' 
+        }}>
+          <IconButton 
+            onClick={() => setIsFullscreen(false)}
+            sx={{ position: 'absolute', top: 10, right: 10, color: 'white', zIndex: 10000 }}
+          >
+            <CloseIcon />
+          </IconButton>
+          {documentPreviewUrl.endsWith('.pdf') ? (
+            <iframe 
+              src={`${API_BASE_URL}${documentPreviewUrl}`}
+              style={{ width: '90%', height: '90%', border: 'none', marginTop: '50px' }}
+              title="Fullscreen Document Preview"
+            />
+          ) : (
+            <img 
+              src={`${API_BASE_URL}${documentPreviewUrl}`}
+              alt="Fullscreen Document Preview"
+              style={{ maxWidth: '90%', maxHeight: '90%', marginTop: '50px', objectFit: 'contain' }}
+            />
+          )}
+        </Box>
+      )}
 
       {/* 添加选择中标者的确认对话框 */}
       <Dialog

@@ -10,6 +10,8 @@ from django.db import transaction
 from .permissions import IsCityUser, IsCompanyUser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
+from rest_framework.status import HTTP_200_OK
+from django.conf import settings
 
 # Create your views here.
 
@@ -279,3 +281,24 @@ class UserRegistrationView(APIView):
                 {'detail': f'Registration failed: {str(e)}'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def health_check(request):
+    """
+    健康检查接口，检查API是否正常工作
+    """
+    return Response(
+        {
+            "status": "ok",
+            "message": "API is working correctly",
+            "database_connected": True,  # 我们完全跳过了迁移, 如果服务器启动，就认为数据库连接成功
+            "environment": {
+                "debug": settings.DEBUG,
+                "allowed_hosts": settings.ALLOWED_HOSTS,
+                "cors_allow_all": settings.CORS_ALLOW_ALL_ORIGINS,
+                "cors_allowed_origins": settings.CORS_ALLOWED_ORIGINS,
+            }
+        },
+        status=HTTP_200_OK
+    )

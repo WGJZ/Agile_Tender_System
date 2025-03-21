@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, TextField, Button, Alert, Typography, CircularProgress } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 
 interface SubmitBidProps {
   tenderId: number;
@@ -19,43 +21,26 @@ interface Bid {
 export default function SubmitBid({ tenderId, onBidSubmitted }: SubmitBidProps) {
   const [hasBid, setHasBid] = useState<boolean | null>(null); // null means loading
   const [error, setError] = useState('');
+  const [submittedBidId, setSubmittedBidId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
 
   
   useEffect(() => {
     const checkExistingBid = async () => {
+      setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const companyId = localStorage.getItem('companyId');
-
-        if (!token || !companyId) {
-          setError('Authentication required');
-          return;
-        }
-
-        const response = await fetch('http://localhost:8000/api/bids/my_bids/', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to check bid status');
-        }
-
-        const bids: Bid[] = await response.json();
-        console.log('Retrieved bids:', bids);
+        const myBids = await api.bids.getMyBids();
+        const existingBid = myBids.find((bid: any) => bid.tender_id.toString() === tenderId);
         
-        const existingBid = bids.find((bid: Bid) => Number(bid.tender_id) === Number(tenderId));
-        console.log('Checking for tender:', tenderId, 'Found bid:', existingBid);
-        
-        setHasBid(!!existingBid);
-
         if (existingBid) {
-          return;
+          // 已经提交过标书
+          setError('您已经对此招标提交过标书');
+          setSubmittedBidId(existingBid.id);
         }
-      } catch (err) {
-        console.error('Error checking bid status:', err);
-        setError('Failed to check bid status');
+      } catch (error) {
+        console.error('Error checking existing bids:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -63,7 +48,7 @@ export default function SubmitBid({ tenderId, onBidSubmitted }: SubmitBidProps) 
   }, [tenderId]);
 
   // loading state
-  if (hasBid === null) {
+  if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" p={2}>
         <CircularProgress />
@@ -99,67 +84,45 @@ function BidForm({ tenderId, onBidSubmitted }: SubmitBidProps) {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSubmitting(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const companyId = localStorage.getItem('companyId');
-
-      if (!token || !companyId) {
-        setError('Authentication required');
-        return;
-      }
-
-      if (!biddingPrice || Number(biddingPrice) <= 0) {
-        setError('Please enter a valid bidding price');
-        return;
-      }
-
+      // 创建表单数据
       const formData = new FormData();
-      formData.append('tender', tenderId.toString());
-      formData.append('bidding_price', biddingPrice);
-      if (document) {
-        formData.append('documents', document);
-      }
-      if (additionalNotes) {
-        formData.append('notes', additionalNotes);
-      }
-
-      console.log('Submitting bid with the following data:');
-      console.log('Tender ID:', tenderId);
-      console.log('Bidding Price:', biddingPrice);
-      console.log('Document:', document?.name);
-      console.log('Additional Notes:', additionalNotes || 'None');
-
-      const response = await fetch('http://localhost:8000/api/bids/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to submit bid');
-      }
-
-      const data = await response.json();
-      console.log('Bid submission response:', data);
-
-      setSuccess('Bid submitted successfully');
-      setBiddingPrice('');
-      setDocument(null);
-      setAdditionalNotes('');
       
+      // 添加文件到表单
+      if (document) {
+        formData.append('bid_document', document);
+      }
+
+      // 提交标书
+      const bidData = {
+        tender_id: tenderId,
+        bid_amount: biddingPrice,
+        company_description: '',
+        proposal_description: additionalNotes,
+      };
+
+      const result = await api.bids.create(bidData);
+      
+      setSuccess('Your bid has been submitted successfully!');
+      // 通知父组件已成功提交
       if (onBidSubmitted) {
         onBidSubmitted();
       }
-    } catch (err) {
-      console.error('Error submitting bid:', err);
-      setError(err instanceof Error ? err.message : 'Failed to submit bid');
+      // 清空表单
+      setBiddingPrice('');
+      setDocument(null);
+      setAdditionalNotes('');
+    } catch (error) {
+      console.error('Error submitting bid:', error);
+      setError(error instanceof Error ? error.message : 'Failed to submit bid');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -224,6 +187,7 @@ function BidForm({ tenderId, onBidSubmitted }: SubmitBidProps) {
         variant="contained"
         color="primary"
         sx={{ mt: 2 }}
+        disabled={submitting}
       >
         Submit Bid
       </Button>

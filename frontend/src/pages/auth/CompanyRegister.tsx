@@ -11,6 +11,7 @@ import {
   Grid,
 } from '@mui/material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import api from '../../services/api';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -72,6 +73,7 @@ const CompanyRegister: React.FC = () => {
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,61 +163,33 @@ const CompanyRegister: React.FC = () => {
       
       console.log('Sending registration data:', JSON.stringify(registrationData));
       
-      // First check if the server is running
+      // 检查服务器连接
       try {
-        const serverCheckResponse = await fetch('http://localhost:8000/api/', { 
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        console.log('Server check response:', serverCheckResponse.status);
-      } catch (error) {
-        throw new Error('Unable to connect to the server. Please make sure the backend server is running.');
-      }
-      
-      const response = await fetch('http://localhost:8000/api/auth/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registrationData),
-      });
-      
-      let responseData;
-      try {
-        responseData = await response.json();
-        console.log('Registration response:', response.status, responseData);
-      } catch (error) {
-        console.error('Error parsing response:', error);
-        throw new Error('Invalid response from server. Please check the backend logs.');
-      }
-      
-      if (response.ok) {
-        // Navigate to login page on success
-        alert('Registration successful! Please login with your new account.');
-        navigate('/auth/company');
-      } else {
-        // Handle different types of errors
-        if (responseData.detail) {
-          setError(responseData.detail);
-        } else if (responseData.errors) {
-          // Handle field-specific errors
-          const serverFieldErrors: Record<string, string> = {};
-          Object.entries(responseData.errors).forEach(([key, value]) => {
-            serverFieldErrors[key] = Array.isArray(value) ? value[0] : String(value);
-          });
-          setFieldErrors(serverFieldErrors);
-        } else {
-          setError('Registration failed: ' + (responseData.message || 'Please check the server logs for details.'));
-        }
+        // 使用 api.auth.register 而不是直接 fetch
+        const result = await api.auth.register(registrationData);
         
-        // Log full error for debugging
-        console.error('Registration error details:', responseData);
+        setSuccess('Registration successful! You can now login with your credentials.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      } catch (registrationError) {
+        if (registrationError instanceof Error) {
+          if (registrationError.message.includes('Network') || registrationError.message.includes('Failed to fetch')) {
+            throw new Error('Unable to connect to the server. Please make sure the backend server is running.');
+          } else {
+            throw registrationError;
+          }
+        } else {
+          throw new Error('Registration failed. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Network error during registration:', error);
-      setError(error instanceof Error ? error.message : 'Network error. Please check your connection and try again.');
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError('Registration failed. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -238,9 +212,17 @@ const CompanyRegister: React.FC = () => {
         </TopSection>
         
         <form onSubmit={handleSubmit}>
+          {/* 错误提示 */}
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}
+            </Alert>
+          )}
+          
+          {/* 成功提示 */}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {success}
             </Alert>
           )}
           
