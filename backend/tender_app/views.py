@@ -309,6 +309,11 @@ def public_tenders(request):
     """
     公开的招标列表API，不需要身份验证
     """
+    print("提供公开招标列表API访问")
     tenders = Tender.objects.all()
     serializer = TenderSerializer(tenders, many=True)
-    return Response(serializer.data)
+    
+    # 确保返回正确的Content-Type
+    response = Response(serializer.data)
+    response['Content-Type'] = 'application/json'
+    return response

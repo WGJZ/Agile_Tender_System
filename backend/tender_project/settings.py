@@ -52,7 +52,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # CORS中间件必须在最前面
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -195,34 +195,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'tender_app.User'
 
-CORS_ALLOW_ALL_ORIGINS = True  # 临时设置为True以解决CORS问题
+# 临时无条件允许所有CORS
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# Or if you want to be more specific:
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "https://agile-tender-system.vercel.app",  # Vercel 前端域名
-    "https://agile-tender-system-1pnp0mv9d-wgjzs-projects.vercel.app",  # Vercel 预览域名
-    "https://agile-tender-system-vercel.app",  # Vercel 替代域名
-    "https://*.vercel.app",  # 所有Vercel子域名
-]
-
-# CSRF信任源配置
-CSRF_TRUSTED_ORIGINS = [
-    "https://agile-tender-system.vercel.app",
-    "https://agile-tender-system-1pnp0mv9d-wgjzs-projects.vercel.app",
-    "https://agile-tender-system-vercel.app",
-    "https://*.vercel.app",  # 允许所有Vercel子域名
-]
-
-# 确保添加这些头部
-CORS_EXPOSE_HEADERS = [
-    'Access-Control-Allow-Origin',
-    'Access-Control-Allow-Credentials',
-]
-
-# Additional CORS settings if needed
+# 尝试修复CORS问题的其他设置
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

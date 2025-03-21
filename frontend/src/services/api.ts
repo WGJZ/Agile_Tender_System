@@ -92,8 +92,27 @@ export const api = {
   // Tenders endpoints
   tenders: {
     getAll: async (includePrivate = true) => {
-      const endpoint = includePrivate ? '/tenders/' : '/tenders/public/';
-      const response = await apiFetch(endpoint);
+      // 如果不需要私有招标，使用无需认证的公开API端点
+      if (!includePrivate) {
+        try {
+          console.log('使用公开API路径');
+          const response = await apiFetch('/tenders/public/');
+          return response.json();
+        } catch (error) {
+          console.error('公开API访问失败，尝试备用路径');
+          // 如果失败，尝试备用路径
+          const fallbackResponse = await fetch(`${API_URL}/tenders/public/?format=json`, {
+            headers: {
+              'Accept': 'application/json'
+            },
+            mode: 'cors'
+          });
+          return fallbackResponse.json();
+        }
+      }
+      
+      // 需要私有招标的情况，需要认证
+      const response = await apiFetch('/tenders/');
       return response.json();
     },
     getById: async (tenderId: string, isPublic = false) => {

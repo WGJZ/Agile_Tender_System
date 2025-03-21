@@ -1,5 +1,5 @@
 // API 基础 URL，直接使用后端API，依赖于后端CORS设置
-// 放弃使用CORS代理，因为它在处理嵌套路径时有问题
+// 重新部署尝试解决问题
 
 // 直接使用后端API URL，确保后端CORS配置正确
 export const API_BASE_URL = 'https://agile-tender.up.railway.app/api';
