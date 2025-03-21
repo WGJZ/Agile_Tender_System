@@ -1,20 +1,15 @@
 {
+  "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/build",
-  "framework": "create-react-app",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/(.*)", "dest": "/frontend/build/$1" },
+    { "src": "^(?!/api).*$", "dest": "/index.html" }
   ],
   "env": {
     "DATABASE_URL": "postgresql://postgres.ktkwobkdvelxwwvarwcx:agile_tender_db@aws-0-eu-central-1.pooler.supabase.com:5432/postgres",
-    "DJANGO_SECRET_KEY": "dzd4uezdxq%dt%y-&+z4-i9%vq=20fpcv7zsz8t)*tr4e(adug",
-    "DEBUG": "False"
+    "DEBUG": "false",
+    "DJANGO_SECRET_KEY": "dzd4uezdxq%dt%y-&+z4-i9%vq=20fpcv7zsz8t)*tr4e(adug"
   }
 } 
