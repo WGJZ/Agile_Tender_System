@@ -1,5 +1,6 @@
 // API 基础 URL，使用CORS代理解决CORS问题
 // 开发环境使用本地API，生产环境使用CORS代理
+// 添加注释触发重新部署
 const CORS_PROXY = 'https://corsproxy.io/?';
 
 export const API_BASE_URL = process.env.NODE_ENV === 'production' 
