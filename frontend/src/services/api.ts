@@ -13,8 +13,9 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   };
 
   try {
-    console.log('Fetching:', `${API_URL}${endpoint}`);
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const url = `${API_URL}${endpoint}`;
+    console.log('Fetching:', url);
+    const response = await fetch(url, {
       ...options,
       headers,
       // 避免使用credentials，因为跨域代理不支持
@@ -27,6 +28,21 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
       localStorage.removeItem('userType');
       window.location.href = '/login';
       throw new Error('Authentication expired. Please login again.');
+    }
+    
+    // 检查响应状态
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`API错误(${response.status}):`, errorText);
+      throw new Error(`API返回错误: ${response.status} ${response.statusText}`);
+    }
+
+    // 检查响应内容类型，确保是JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.indexOf('application/json') === -1) {
+      const text = await response.text();
+      console.error('非JSON响应:', text);
+      throw new Error('服务器返回了非JSON格式的响应');
     }
 
     return response;
