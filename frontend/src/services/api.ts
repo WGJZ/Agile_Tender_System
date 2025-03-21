@@ -1,204 +1,99 @@
-import { API_URL } from '../api/config';
+import axios from 'axios';
 
-// Helper function to get auth token
-const getToken = () => localStorage.getItem('token');
-
-// Base fetch function with auth headers
-const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-  const token = getToken();
-  const headers = {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-    ...(token ? { 'Authorization': `Token ${token}` } : {}),
-    ...(options.headers || {})
-  };
-
-  try {
-    // 修复URL拼接问题 - 直接请求后端API，不使用AllOrigins
-    // 在开发过程中发现AllOrigins代理在处理二次路径拼接时会有问题
-    // 直接访问后端API，让后端处理CORS
-    const url = 'https://agile-tender.up.railway.app/api' + endpoint;
-    
-    console.log('Fetching:', url);
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      mode: 'cors',
-    });
-
-    // Handle 401 Unauthorized
-    if (response.status === 401) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('userType');
-      window.location.href = '/login';
-      throw new Error('Authentication expired. Please login again.');
-    }
-    
-    // 检查响应状态
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`API错误(${response.status}):`, errorText);
-      throw new Error(`API返回错误: ${response.status} ${response.statusText}`);
-    }
-
-    // 检查响应内容类型，确保是JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.indexOf('application/json') === -1) {
-      const text = await response.text();
-      console.error('非JSON响应:', text);
-      throw new Error('服务器返回了非JSON格式的响应');
-    }
-
-    return response;
-  } catch (error) {
-    console.error('API调用错误:', error);
-    
-    // 如果是CORS错误，尝试提供更多诊断信息
-    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-      console.log('可能是CORS错误。请检查以下内容:');
-      console.log('- 后端CORS配置是否正确');
-      console.log('- 后端是否已重新部署');
-      console.log('- API地址是否正确:', 'https://agile-tender.up.railway.app/api');
-    }
-    
-    throw error;
+// 获取当前环境的URL
+const getBaseUrl = () => {
+  // 在开发环境中使用本地服务器
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8000';
   }
+  
+  // 在生产环境中使用Vercel无服务器API
+  return '';  // 空字符串表示相对路径，将使用当前域名
 };
 
-// API functions for different endpoints
-export const api = {
-  // Auth endpoints
+const baseURL = getBaseUrl();
+
+// 创建axios实例
+const apiClient = axios.create({
+  baseURL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// 请求拦截器，添加认证token
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// API服务
+const api = {
   auth: {
-    login: async (username: string, password: string, userType: string) => {
-      const response = await apiFetch('/auth/login/', {
-        method: 'POST',
-        body: JSON.stringify({
-          username,
-          password,
-          user_type: userType.toUpperCase()
-        }),
-      });
-      return response.json();
+    login: async (username: string, password: string) => {
+      const response = await apiClient.post('/api/auth/token', { username, password });
+      return response.data;
     },
     register: async (userData: any) => {
-      const response = await apiFetch('/auth/register/', {
-        method: 'POST',
-        body: JSON.stringify(userData),
-      });
-      return response.json();
+      const response = await apiClient.post('/api/auth/register', userData);
+      return response.data;
     },
   },
-
-  // Tenders endpoints
   tenders: {
-    getAll: async (includePrivate = true) => {
-      // 如果不需要私有招标，使用无需认证的公开API端点
-      if (!includePrivate) {
-        try {
-          console.log('使用公开API路径 - 直接访问');
-          // 直接连接后端，不使用代理
-          const url = 'https://agile-tender.up.railway.app/api/tenders/public/';
-          console.log('尝试使用直接URL:', url);
-          
-          const response = await fetch(url, {
-            headers: {
-              'Accept': 'application/json'
-            },
-            mode: 'cors'
-          });
-          
-          if (!response.ok) {
-            throw new Error(`API返回错误: ${response.status}`);
-          }
-          
-          return response.json();
-        } catch (error) {
-          console.error('公开API访问失败:', error);
-          throw error;
-        }
-      }
-      
-      // 需要私有招标的情况，需要认证
-      const response = await apiFetch('/tenders/');
-      return response.json();
+    getAll: async () => {
+      const response = await apiClient.get('/api/tenders');
+      return response.data;
     },
-    getById: async (tenderId: string, isPublic = false) => {
-      const endpoint = isPublic ? `/tenders/public/${tenderId}/` : `/tenders/${tenderId}/`;
-      const response = await apiFetch(endpoint);
-      return response.json();
+    getPublic: async () => {
+      const response = await apiClient.get('/api/tenders/public');
+      return response.data;
+    },
+    getById: async (id: string, isPublic = false) => {
+      const endpoint = isPublic ? `/api/tenders/public/${id}` : `/api/tenders/${id}`;
+      const response = await apiClient.get(endpoint);
+      return response.data;
     },
     create: async (tenderData: any) => {
-      const response = await apiFetch('/tenders/', {
-        method: 'POST',
-        body: JSON.stringify(tenderData),
-      });
-      return response.json();
+      const response = await apiClient.post('/api/tenders', tenderData);
+      return response.data;
     },
-    update: async (tenderId: string, tenderData: any) => {
-      const response = await apiFetch(`/tenders/${tenderId}/`, {
-        method: 'PUT',
-        body: JSON.stringify(tenderData),
-      });
-      return response.json();
+    update: async (id: string, tenderData: any) => {
+      const response = await apiClient.put(`/api/tenders/${id}`, tenderData);
+      return response.data;
     },
-    delete: async (tenderId: string) => {
-      const response = await apiFetch(`/tenders/${tenderId}/`, {
-        method: 'DELETE',
-      });
-      return response;
-    },
-    updateStatus: async (tenderId: string, status: string) => {
-      const response = await apiFetch(`/tenders/${tenderId}/update-status/`, {
-        method: 'POST',
-        body: JSON.stringify({ status }),
-      });
-      return response.json();
+    delete: async (id: string) => {
+      const response = await apiClient.delete(`/api/tenders/${id}`);
+      return response.data;
     },
     getBids: async (tenderId: string) => {
-      const response = await apiFetch(`/tenders/${tenderId}/bids/`);
-      return response.json();
+      const response = await apiClient.get(`/api/tenders/${tenderId}/bids`);
+      return response.data;
     },
   },
-
-  // Bids endpoints
   bids: {
-    getMyBids: async () => {
-      const response = await apiFetch('/bids/my_bids/');
-      return response.json();
+    create: async (tenderId: string, bidData: any) => {
+      const response = await apiClient.post(`/api/tenders/${tenderId}/bids`, bidData);
+      return response.data;
     },
-    getAllBids: async () => {
-      const response = await apiFetch('/bids/all/');
-      return response.json();
+    getAll: async () => {
+      const response = await apiClient.get('/api/bids');
+      return response.data;
     },
-    getById: async (bidId: string) => {
-      const response = await apiFetch(`/bids/${bidId}/`);
-      return response.json();
+  },
+  users: {
+    getProfile: async () => {
+      const response = await apiClient.get('/api/users/profile');
+      return response.data;
     },
-    create: async (bidData: any) => {
-      const response = await apiFetch('/bids/', {
-        method: 'POST',
-        body: JSON.stringify(bidData),
-      });
-      return response.json();
-    },
-    update: async (bidId: string, bidData: any) => {
-      const response = await apiFetch(`/bids/${bidId}/`, {
-        method: 'PUT',
-        body: JSON.stringify(bidData),
-      });
-      return response.json();
-    },
-    delete: async (bidId: string) => {
-      const response = await apiFetch(`/bids/${bidId}/`, {
-        method: 'DELETE',
-      });
-      return response;
-    },
-    selectWinner: async (bidId: string) => {
-      const response = await apiFetch(`/bids/${bidId}/select_winner/`, {
-        method: 'POST',
-      });
-      return response.json();
+    updateProfile: async (profileData: any) => {
+      const response = await apiClient.put('/api/users/profile', profileData);
+      return response.data;
     },
   },
 };

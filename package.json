@@ -1,0 +1,16 @@
+{
+  "name": "agile-tender-system",
+  "version": "1.0.0",
+  "description": "Agile Tender System - API and Frontend",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev",
+    "build": "vercel build"
+  },
+  "dependencies": {
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "vercel": "^33.7.0"
+  }
+} 
