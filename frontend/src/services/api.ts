@@ -13,13 +13,16 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   };
 
   try {
-    const url = `${API_URL}${endpoint}`;
+    // 修复URL拼接问题 - 直接请求后端API，不使用AllOrigins
+    // 在开发过程中发现AllOrigins代理在处理二次路径拼接时会有问题
+    // 直接访问后端API，让后端处理CORS
+    const url = 'https://agile-tender.up.railway.app/api' + endpoint;
+    
     console.log('Fetching:', url);
     const response = await fetch(url, {
       ...options,
       headers,
-      // 避免使用credentials，因为跨域代理不支持
-      // credentials: 'same-origin',
+      mode: 'cors',
     });
 
     // Handle 401 Unauthorized
@@ -54,7 +57,7 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
       console.log('可能是CORS错误。请检查以下内容:');
       console.log('- 后端CORS配置是否正确');
       console.log('- 后端是否已重新部署');
-      console.log('- API地址是否正确:', `${API_URL}${endpoint}`);
+      console.log('- API地址是否正确:', 'https://agile-tender.up.railway.app/api');
     }
     
     throw error;
