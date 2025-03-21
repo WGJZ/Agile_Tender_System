@@ -80,7 +80,10 @@ const LoginForm = () => {
     }
 
     try {
-      const data = await api.auth.login(formData.username, formData.password, userType || '');
+      const data = await api.auth.login({ 
+        username: formData.username, 
+        password: formData.password 
+      });
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('userType', data.user_type);
