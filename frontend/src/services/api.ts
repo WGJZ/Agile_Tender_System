@@ -85,6 +85,10 @@ const api = {
       const response = await apiClient.get('/api/bids');
       return response.data;
     },
+    getMyBids: async () => {
+      const response = await apiClient.get('/api/bids/my-bids');
+      return response.data;
+    },
   },
   users: {
     getProfile: async () => {
