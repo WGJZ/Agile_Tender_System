@@ -13,14 +13,12 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
   };
 
   try {
-    // 尝试使用不同的CORS模式
+    console.log('Fetching:', `${API_URL}${endpoint}`);
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
-      // 在某些情况下，credentials: 'include' 可能会导致CORS问题
-      // 如果这样，可以尝试去掉这个设置
-      credentials: 'same-origin',
-      // 不要明确设置mode，让浏览器决定
+      // 避免使用credentials，因为跨域代理不支持
+      // credentials: 'same-origin',
     });
 
     // Handle 401 Unauthorized
