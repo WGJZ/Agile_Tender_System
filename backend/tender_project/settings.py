@@ -203,6 +203,25 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://agile-tender-system.vercel.app",  # Vercel 前端域名
+    "https://agile-tender-system-1pnp0mv9d-wgjzs-projects.vercel.app",  # Vercel 预览域名
+    "https://agile-tender-system-vercel.app",  # Vercel 替代域名
+]
+
+# CSRF信任源配置
+CSRF_TRUSTED_ORIGINS = [
+    "https://agile-tender-system.vercel.app",
+    "https://agile-tender-system-1pnp0mv9d-wgjzs-projects.vercel.app",
+    "https://agile-tender-system-vercel.app",
+    "https://*.vercel.app",  # 允许所有Vercel子域名
+]
+
+# 允许Cookie跨域发送
+CORS_ALLOW_CREDENTIALS = True
+
+# 确保添加这些头部
+CORS_EXPOSE_HEADERS = [
+    'Access-Control-Allow-Origin',
+    'Access-Control-Allow-Credentials',
 ]
 
 # Additional CORS settings if needed
