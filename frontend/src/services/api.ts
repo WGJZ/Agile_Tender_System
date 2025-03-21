@@ -12,20 +12,39 @@ const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
     ...(options.headers || {})
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers
-  });
+  try {
+    // 尝试使用不同的CORS模式
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      // 在某些情况下，credentials: 'include' 可能会导致CORS问题
+      // 如果这样，可以尝试去掉这个设置
+      credentials: 'same-origin',
+      // 不要明确设置mode，让浏览器决定
+    });
 
-  // Handle 401 Unauthorized
-  if (response.status === 401) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userType');
-    window.location.href = '/login';
-    throw new Error('Authentication expired. Please login again.');
+    // Handle 401 Unauthorized
+    if (response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userType');
+      window.location.href = '/login';
+      throw new Error('Authentication expired. Please login again.');
+    }
+
+    return response;
+  } catch (error) {
+    console.error('API调用错误:', error);
+    
+    // 如果是CORS错误，尝试提供更多诊断信息
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      console.log('可能是CORS错误。请检查以下内容:');
+      console.log('- 后端CORS配置是否正确');
+      console.log('- 后端是否已重新部署');
+      console.log('- API地址是否正确:', `${API_URL}${endpoint}`);
+    }
+    
+    throw error;
   }
-
-  return response;
 };
 
 // API functions for different endpoints
