@@ -99,7 +99,8 @@ const api = {
   bids: {
     create: (tenderId: string, bidData: any) => post(`/bids/create/${tenderId}/`, bidData),
     getAll: () => get('/bids/'),
-    getMyBids: () => get('/bids/my-bids/')
+    getMyBids: () => get('/bids/my-bids/'),
+    selectWinner: (bidId: string) => post(`/bids/${bidId}/select-winner/`, {})
   },
   auth: {
     login: (credentials: { username: string, password: string }) => 
