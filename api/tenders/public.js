@@ -1,23 +1,24 @@
-// 模拟公开招标数据
+// 专门用于处理公共招标API的无服务器函数
 export default function handler(req, res) {
-  // 允许跨域请求
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // 设置CORS头，允许跨域请求
+  res.setHeader('Access-Control-Allow-Origin', '*'); 
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Content-Type', 'application/json');
 
   // 处理预检请求
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // 确保只处理GET请求
+  // 仅允许GET请求
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ error: '仅支持GET方法' });
   }
 
-  try {
-    // 返回模拟数据
-    const tenders = [
+  // 返回模拟数据
+  res.status(200).json({
+    tenders: [
       {
         id: 1,
         title: "城市公园绿化项目",
@@ -54,12 +55,6 @@ export default function handler(req, res) {
         location: "广州市",
         created_at: "2024-10-10"
       }
-    ];
-
-    // 返回标准格式数据
-    return res.status(200).json({ tenders });
-  } catch (error) {
-    console.error('API错误:', error);
-    return res.status(500).json({ error: '服务器内部错误', details: error.message });
-  }
+    ]
+  });
 } 
