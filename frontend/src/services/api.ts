@@ -63,12 +63,6 @@ const get = async (url: string) => {
       throw new Error('API返回空数据');
     }
     
-    // 针对不同API返回格式的处理
-    // 如果是tenders API，确保返回tenders数组，即使是空的
-    if (url.includes('/tenders') && 'tenders' in data) {
-      return data.tenders;
-    }
-    
     return data;
   } catch (error: any) {
     console.error(`请求失败: ${error}`);
@@ -84,6 +78,7 @@ const post = async (url: string, data: any) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify(data),
     });
@@ -91,6 +86,15 @@ const post = async (url: string, data: any) => {
     // 检查响应状态
     if (!response.ok) {
       throw new Error(`API返回错误: ${response.status}`);
+    }
+    
+    // 检查内容类型
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      // 记录非JSON响应以便调试
+      const text = await response.text();
+      console.error('收到非JSON响应:', text.substring(0, 150) + '...');
+      throw new Error('API未返回JSON数据');
     }
     
     return await response.json();
