@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
 import { Box, styled, TextField, Typography, Link } from '@mui/material';
+import api from '../services/api';
 
 // create a custom button container
 const StyledButtonContainer = styled(Box)(({ theme }) => ({
@@ -79,30 +80,14 @@ const LoginForm = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/login/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          user_type: userType?.toUpperCase()
-        }),
-      });
+      const data = await api.auth.login(formData.username, formData.password, userType || '');
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('userType', data.user_type);
-        if (userType === 'city') {
-          navigate('/city');
-        } else if (userType === 'company') {
-          navigate('/company');
-        }
-      } else {
-        setError(data.message || 'Login failed. Please try again.');
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('userType', data.user_type);
+      if (userType === 'city') {
+        navigate('/city');
+      } else if (userType === 'company') {
+        navigate('/company');
       }
     } catch (error) {
       console.error('Error:', error);

@@ -32,6 +32,8 @@ import { useNavigate } from 'react-router-dom';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import InfoIcon from '@mui/icons-material/Info';
+import { API_URL } from '../api/config'; // 导入 API_URL
+import api from '../services/api';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -132,57 +134,39 @@ const CitizenView: React.FC = () => {
     'TRANSPORTATION',
     'ENVIRONMENT',
   ]);
+  const [usingSampleData, setUsingSampleData] = useState(false);
+  const [winnerInfo, setWinnerInfo] = useState<{ tenderId: number; companyName: string; bidAmount: string } | null>(null);
 
   useEffect(() => {
     fetchTenders();
   }, []);
 
   const fetchTenders = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      // Try to get a token - for testing purposes
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // First try the authenticated endpoint if we have a token
-      let response;
-      if (token) {
-        response = await fetch('http://localhost:8000/api/tenders/', {
-          headers
-        });
-      } else {
-        // As a fallback, try the regular endpoint with a guest token if possible
-        response = await fetch('http://localhost:8000/api/tenders/', {
-          headers: {
-            'x-guest-access': 'true'
-          }
-        });
-      }
-      
-      if (!response.ok) {
-        // If both approaches fail, load sample data as fallback
-        console.error('API requests failed, using sample data');
-        const sampleData = getSampleTenders();
-        setTenders(sampleData);
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Fetched tenders:', data);
+      const data = await api.tenders.getAll(false); // false to get only public tenders
       setTenders(data);
+      setFilteredTenders(data);
     } catch (error) {
       console.error('Error fetching tenders:', error);
-      setError('Failed to load tenders. Using sample data instead.');
-      // Load sample data when API fails
-      const sampleData = getSampleTenders();
-      setTenders(sampleData);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchWinnerInfo = async (tenderId: number) => {
+    try {
+      const bids = await api.tenders.getBids(tenderId.toString());
+      const winningBid = bids.find((bid: any) => bid.is_winner);
+      if (winningBid) {
+        setWinnerInfo({
+          tenderId,
+          companyName: winningBid.company_name,
+          bidAmount: winningBid.bid_amount
+        });
+      }
+    } catch (error) {
+      console.error(`Error fetching winner info for tender ${tenderId}:`, error);
     }
   };
 
@@ -314,11 +298,8 @@ const CitizenView: React.FC = () => {
     }
     
     setFilteredTenders(filtered);
+    return filtered;
   };
-
-  useEffect(() => {
-    applyFilters(tenders, searchTerm, selectedCategory, showOnlyOpenTenders);
-  }, [searchTerm, selectedCategory, showOnlyOpenTenders, tenders]);
 
   const isDeadlinePassed = (deadline: string): boolean => {
     return new Date(deadline) < new Date();
@@ -360,48 +341,7 @@ const CitizenView: React.FC = () => {
     
     // 如果是已授标招标，尝试获取获奖者信息
     if (tender.status === 'AWARDED') {
-      fetchWinnerInfo(tender.id);
-    }
-  };
-
-  // 添加一个函数来尝试获取获奖者信息
-  const fetchWinnerInfo = async (tenderId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers: HeadersInit = {};
-      
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      
-      // 尝试从不同的API端点获取获奖者信息
-      const response = await fetch(`http://localhost:8000/api/tenders/${tenderId}/bids/`, {
-        headers
-      });
-      
-      if (response.ok) {
-        const bids = await response.json();
-        console.log('Fetched bids for tender:', bids);
-        
-        // 查找中标的投标
-        const winningBid = bids.find((bid: any) => bid.is_winner === true);
-        
-        if (winningBid) {
-          console.log('Found winning bid:', winningBid);
-          setSelectedTender(prevTender => {
-            if (!prevTender) return prevTender;
-            return {
-              ...prevTender,
-              winner_name: winningBid.company_name,
-              winning_bid: winningBid.bidding_price.toString()
-            };
-          });
-        }
-      } else {
-        console.log('Could not fetch winner information from API');
-      }
-    } catch (error) {
-      console.error('Error fetching winner information:', error);
+      fetchWinnerInfo(parseInt(tender.id));
     }
   };
 

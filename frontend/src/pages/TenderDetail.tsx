@@ -23,6 +23,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { formatDate } from '../utils/dateUtils';
 import DescriptionIcon from '@mui/icons-material/Description';
 import BusinessIcon from '@mui/icons-material/Business';
+import api from '../services/api';
 
 const PageContainer = styled('div')({
   width: '100%',
@@ -107,6 +108,9 @@ const TenderDetail: React.FC = () => {
   const [selectWinnerDialogOpen, setSelectWinnerDialogOpen] = useState(false);
   const [selectedBidId, setSelectedBidId] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     // Determine user type from URL or token
@@ -128,40 +132,20 @@ const TenderDetail: React.FC = () => {
   const fetchTenderAndBids = async () => {
     try {
       setLoading(true);
-      let headers = {};
       const token = localStorage.getItem('token');
       
-      if (token) {
-        headers = {
-          'Authorization': `Bearer ${token}`,
-        };
-      }
-
-      // Determine the endpoint based on user authentication
-      const tenderEndpoint = token
-        ? `http://localhost:8000/api/tenders/${tenderId}/`
-        : `http://localhost:8000/api/tenders/public/${tenderId}/`;
-
-      // Fetch tender details
-      const tenderResponse = await fetch(tenderEndpoint, { headers });
-
-      if (!tenderResponse.ok) {
-        throw new Error('Failed to fetch tender details');
-      }
-
-      const tenderData = await tenderResponse.json();
+      // Ensure tenderId is a string for API calls
+      const tenderIdString = tenderId || '';
+      
+      // Determine if we should use public or private endpoint
+      const isPublic = !token;
+      const tenderData = await api.tenders.getById(tenderIdString, isPublic);
       setTender(tenderData);
 
       // Only fetch bids if user is authenticated
       if (token) {
-        // Fetch bids for this tender
-        const bidsEndpoint = `http://localhost:8000/api/tenders/${tenderId}/bids/`;
-        const bidsResponse = await fetch(bidsEndpoint, { headers });
-
-        if (bidsResponse.ok) {
-          const bidsData = await bidsResponse.json();
-          setBids(bidsData);
-        }
+        const bidsData = await api.tenders.getBids(tenderIdString);
+        setBids(bidsData);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -203,28 +187,18 @@ const TenderDetail: React.FC = () => {
     if (!selectedBidId) return;
     
     try {
-      const response = await fetch(`http://localhost:8000/api/bids/${selectedBidId}/select_winner/`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      setSubmitting(true);
+      await api.bids.selectWinner(selectedBidId);
       
-      if (!response.ok) {
-        throw new Error('Failed to select winner');
-      }
-      
-      // 关闭对话框
-      setSelectWinnerDialogOpen(false);
-      // 显示成功消息
-      setActionSuccess('Winner selected successfully!');
-      // 重新获取数据
-      fetchTenderAndBids();
-    } catch (err) {
-      console.error('Error selecting winner:', err);
+      // Refresh data after selection
+      await fetchTenderAndBids();
+      setShowWinnerModal(false);
+      setSuccessMessage('Winner selected successfully!');
+    } catch (error) {
+      console.error('Error selecting winner:', error);
       setError('Failed to select winner. Please try again.');
-      setSelectWinnerDialogOpen(false);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -496,13 +470,13 @@ const TenderDetail: React.FC = () => {
       </Dialog>
 
       {/* 添加成功消息显示 */}
-      {actionSuccess && (
+      {successMessage && (
         <Alert 
           severity="success" 
           sx={{ mt: 2, mb: 2 }}
-          onClose={() => setActionSuccess('')}
+          onClose={() => setSuccessMessage('')}
         >
-          {actionSuccess}
+          {successMessage}
         </Alert>
       )}
     </PageContainer>

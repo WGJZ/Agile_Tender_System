@@ -1,35 +1,143 @@
-import axios from 'axios';
+import { API_URL } from '../api/config';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// Helper function to get auth token
+const getToken = () => localStorage.getItem('token');
 
-const api = axios.create({
-  baseURL: API_URL,
-});
+// Base fetch function with auth headers
+const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const token = getToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Token ${token}` } : {}),
+    ...(options.headers || {})
+  };
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${API_URL}${endpoint}`, {
+    ...options,
+    headers
+  });
+
+  // Handle 401 Unauthorized
+  if (response.status === 401) {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userType');
+    window.location.href = '/login';
+    throw new Error('Authentication expired. Please login again.');
   }
-  return config;
-});
 
-export const authAPI = {
-  login: (credentials: { username: string; password: string }) =>
-    api.post('/auth/login/', credentials),
-  register: (userData: any) => api.post('/auth/register/', userData),
+  return response;
 };
 
-export const tenderAPI = {
-  getAllTenders: () => api.get('/tenders/'),
-  createTender: (tenderData: any) => api.post('/tenders/', tenderData),
-  updateTender: (id: string, tenderData: any) => api.put(`/tenders/${id}/`, tenderData),
-  deleteTender: (id: string) => api.delete(`/tenders/${id}/`),
-};
+// API functions for different endpoints
+export const api = {
+  // Auth endpoints
+  auth: {
+    login: async (username: string, password: string, userType: string) => {
+      const response = await apiFetch('/auth/login/', {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          password,
+          user_type: userType.toUpperCase()
+        }),
+      });
+      return response.json();
+    },
+    register: async (userData: any) => {
+      const response = await apiFetch('/auth/register/', {
+        method: 'POST',
+        body: JSON.stringify(userData),
+      });
+      return response.json();
+    },
+  },
 
-export const bidAPI = {
-  submitBid: (bidData: any) => api.post('/bids/', bidData),
-  selectWinner: (bidId: string) => api.post(`/bids/${bidId}/select_winner/`),
+  // Tenders endpoints
+  tenders: {
+    getAll: async (includePrivate = true) => {
+      const endpoint = includePrivate ? '/tenders/' : '/tenders/public/';
+      const response = await apiFetch(endpoint);
+      return response.json();
+    },
+    getById: async (tenderId: string, isPublic = false) => {
+      const endpoint = isPublic ? `/tenders/public/${tenderId}/` : `/tenders/${tenderId}/`;
+      const response = await apiFetch(endpoint);
+      return response.json();
+    },
+    create: async (tenderData: any) => {
+      const response = await apiFetch('/tenders/', {
+        method: 'POST',
+        body: JSON.stringify(tenderData),
+      });
+      return response.json();
+    },
+    update: async (tenderId: string, tenderData: any) => {
+      const response = await apiFetch(`/tenders/${tenderId}/`, {
+        method: 'PUT',
+        body: JSON.stringify(tenderData),
+      });
+      return response.json();
+    },
+    delete: async (tenderId: string) => {
+      const response = await apiFetch(`/tenders/${tenderId}/`, {
+        method: 'DELETE',
+      });
+      return response;
+    },
+    updateStatus: async (tenderId: string, status: string) => {
+      const response = await apiFetch(`/tenders/${tenderId}/update-status/`, {
+        method: 'POST',
+        body: JSON.stringify({ status }),
+      });
+      return response.json();
+    },
+    getBids: async (tenderId: string) => {
+      const response = await apiFetch(`/tenders/${tenderId}/bids/`);
+      return response.json();
+    },
+  },
+
+  // Bids endpoints
+  bids: {
+    getMyBids: async () => {
+      const response = await apiFetch('/bids/my_bids/');
+      return response.json();
+    },
+    getAllBids: async () => {
+      const response = await apiFetch('/bids/all/');
+      return response.json();
+    },
+    getById: async (bidId: string) => {
+      const response = await apiFetch(`/bids/${bidId}/`);
+      return response.json();
+    },
+    create: async (bidData: any) => {
+      const response = await apiFetch('/bids/', {
+        method: 'POST',
+        body: JSON.stringify(bidData),
+      });
+      return response.json();
+    },
+    update: async (bidId: string, bidData: any) => {
+      const response = await apiFetch(`/bids/${bidId}/`, {
+        method: 'PUT',
+        body: JSON.stringify(bidData),
+      });
+      return response.json();
+    },
+    delete: async (bidId: string) => {
+      const response = await apiFetch(`/bids/${bidId}/`, {
+        method: 'DELETE',
+      });
+      return response;
+    },
+    selectWinner: async (bidId: string) => {
+      const response = await apiFetch(`/bids/${bidId}/select_winner/`, {
+        method: 'POST',
+      });
+      return response.json();
+    },
+  },
 };
 
 export default api; 
