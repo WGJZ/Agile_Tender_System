@@ -95,19 +95,26 @@ export const api = {
       // 如果不需要私有招标，使用无需认证的公开API端点
       if (!includePrivate) {
         try {
-          console.log('使用公开API路径');
-          const response = await apiFetch('/tenders/public/');
-          return response.json();
-        } catch (error) {
-          console.error('公开API访问失败，尝试备用路径');
-          // 如果失败，尝试备用路径
-          const fallbackResponse = await fetch(`${API_URL}/tenders/public/?format=json`, {
+          console.log('使用公开API路径 - 直接访问');
+          // 直接连接后端，不使用代理
+          const url = 'https://agile-tender.up.railway.app/api/tenders/public/';
+          console.log('尝试使用直接URL:', url);
+          
+          const response = await fetch(url, {
             headers: {
               'Accept': 'application/json'
             },
             mode: 'cors'
           });
-          return fallbackResponse.json();
+          
+          if (!response.ok) {
+            throw new Error(`API返回错误: ${response.status}`);
+          }
+          
+          return response.json();
+        } catch (error) {
+          console.error('公开API访问失败:', error);
+          throw error;
         }
       }
       
